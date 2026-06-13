@@ -7,7 +7,7 @@ build/
 .next/
 apps/api/src/generated/
 
-# Environment files
+# Environment files\\\\
 .env
 .env.local
 .env.*.local
