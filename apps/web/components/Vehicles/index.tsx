@@ -58,7 +58,8 @@ export function VehiclesPage() {
         <Sidebar current="vehicles" />
       </div>
       <main className="flex-1 p-6 pr-8 min-w-0">
-        <div className="flex items-center justify-between mb-6">
+        <Header />
+        <div className="mt-6 flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Vehicles</h1>
             <p className="text-gray-500 text-sm mt-1">Manage and monitor your bus fleet</p>
@@ -293,6 +294,53 @@ function ActionButton({ label, variant = "default" }: { label: string; variant?:
   )
 }
 
+function Header() {
+  const navTabs = ["Overview", "Vehicles", "Drivers", "Routes", "Reports"]
+
+  return (
+    <div className="space-y-6">
+      <div className="relative flex items-center justify-center gap-6">
+        <div className="flex items-center gap-2 flex-wrap">
+          {navTabs.map((tab) => (
+            <Link
+              key={tab}
+              href={tab === "Overview" ? "/dashboard" : "#"}
+              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                tab === "Vehicles"
+                  ? "bg-gray-900 text-white shadow-md"
+                  : "text-gray-600 hover:bg-white/50 hover:text-gray-900"
+              }`}
+            >
+              {tab}
+            </Link>
+          ))}
+        </div>
+        <div className="absolute right-0 flex items-center gap-3 shrink-0">
+          <button className="w-11 h-11 rounded-full glass-panel flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
+            <IconSearch />
+          </button>
+          <button className="w-11 h-11 rounded-full glass-panel flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
+            <IconNotification />
+          </button>
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-semibold shadow-md ring-2 ring-white/80">
+            J
+          </div>
+        </div>
+      </div>
+      <div className="relative max-w-md">
+        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+          <IconSearch />
+        </div>
+        <input
+          type="text"
+          placeholder="Search buses, routes, registrations..."
+          className="w-full pl-14 pr-5 py-3.5 glass-panel rounded-full text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+        />
+      </div>
+    </div>
+  )
+}
+
 function Sidebar({ current }: { current: string }) {
   const items = [
     { icon: <IconDashboard />, label: "Dashboard", href: "/dashboard" },
@@ -340,3 +388,5 @@ function IconTools({ className }: { className?: string }) { return <svg width="2
 function IconFuel({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg> }
 function IconBell({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> }
 function IconChart({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> }
+function IconSearch({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> }
+function IconNotification({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> }
