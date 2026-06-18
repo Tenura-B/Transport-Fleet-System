@@ -3,6 +3,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --fleet-bg-start: #cdd6e0;
+  --fleet-bg-mid: #dde4eb;
+  --fleet-bg-end: #e8edf2;
 }
 
 @theme inline {
@@ -23,4 +26,32 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.glass-card {
+  background: rgba(232, 232, 238, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(215, 215, 225, 0.8);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.05);
+}
+
+.soft-card {
+  background: rgba(238, 238, 243, 0.95);
+  border: 1px solid rgba(220, 220, 230, 0.95);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.04);
+}
+
+.fleet-bg {
+  background: linear-gradient(135deg, var(--fleet-bg-start) 0%, var(--fleet-bg-mid) 45%, var(--fleet-bg-end) 100%);
 }
