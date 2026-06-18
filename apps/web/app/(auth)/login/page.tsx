@@ -2,11 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 
 export default function LoginPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
 
@@ -14,7 +16,10 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     // TODO: Implement login logic here
-    setTimeout(() => setIsLoading(false), 1000)
+    setTimeout(() => {
+      setIsLoading(false)
+      router.push("/dashboard")
+    }, 1000)
   }
 
   return (
