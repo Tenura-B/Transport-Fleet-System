@@ -2,172 +2,62 @@ import React from "react"
 import Link from "next/link"
 import { SriLankaMap } from "./SriLankaMap"
 
-const glassCard = "glass-card rounded-[36px]"
-const softCard = "soft-card rounded-[24px]"
-const innerCard = "soft-card rounded-[20px]"
+const glassCard = "glass-card rounded-2xl"
+const softCard = "soft-card rounded-xl"
+const innerCard = "soft-card rounded-lg"
 
 export function FleetDashboard() {
   return (
-    <div className="min-h-screen flex fleet-bg">
-      <div className="flex flex-col items-center pl-5 pt-8 flex-shrink-0">
-        <div className="mb-4 shrink-0">
-          <span className="text-xl font-bold tracking-tight text-gray-800">CeyTrex</span>
+    <div className="space-y-5">
+      <DashboardTitle />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-5 flex">
+          <div className="w-full flex flex-col">
+            <KPICards />
+          </div>
         </div>
-        <div className="flex-1 flex flex-col items-center pt-8">
-          <Sidebar />
-          <div className="flex flex-col items-center gap-2 mt-4">
-            <button
-              title="Settings"
-              aria-label="Settings"
-              className="w-11 h-11 flex items-center justify-center rounded-full text-gray-500 hover:bg-white/55 hover:text-gray-800 transition-all duration-200"
-            >
-              <IconSettings />
-            </button>
-            <button
-              title="Help"
-              aria-label="Help"
-              className="w-11 h-11 flex items-center justify-center rounded-full text-gray-500 hover:bg-white/55 hover:text-gray-800 transition-all duration-200"
-            >
-              <IconHelp />
-            </button>
+        <div className="lg:col-span-7 flex">
+          <div className="w-full flex flex-col">
+            <FleetCoverageCard />
           </div>
         </div>
       </div>
-      <main className="flex-1 p-6 pr-8 min-w-0">
-        <Header />
-        <div className="mt-8 space-y-8">
-          <DashboardTitle />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-5 flex">
-              <div className="w-full flex flex-col">
-                <KPICards />
-              </div>
-            </div>
-            <div className="lg:col-span-7 flex">
-              <div className="w-full flex flex-col">
-                <FleetCoverageCard />
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-5 space-y-8">
-              <AlertsFeed />
-            </div>
-            <div className="lg:col-span-7 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FleetStatusPie />
-                <FuelBreakdownPie />
-              </div>
-              <FuelTrendChart />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <TripStatusPanel />
-            <RevenueSummaryCard />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <MaintenanceSchedule />
-            <DriverStatusGrid />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-5 space-y-5">
+          <AlertsFeed />
         </div>
-      </main>
-    </div>
-  )
-}
-
-function Sidebar() {
-  const menuItems = [
-    { icon: <IconDashboard />, label: "Dashboard", active: true, href: "/dashboard" },
-    { icon: <IconFleet />, label: "Fleet Overview", href: "#" },
-    { icon: <IconTruck />, label: "Vehicles", href: "/dashboard/vehicles" },
-    { icon: <IconUsers />, label: "Drivers", href: "#" },
-    { icon: <IconMap />, label: "Routes", href: "#" },
-    { icon: <IconDocument />, label: "Trips", href: "#" },
-    { icon: <IconTools />, label: "Maintenance", href: "#" },
-    { icon: <IconFuel />, label: "Fuel Management", href: "#" },
-    { icon: <IconBell />, label: "Alerts", href: "#" },
-    { icon: <IconChart />, label: "Reports", href: "#" },
-  ]
-
-  return (
-    <aside className="glass-panel w-[72px] rounded-[40px] py-5 px-3 flex flex-col items-center min-h-[650px]">
-      <nav className="flex flex-col items-center gap-1.5 flex-1">
-        {menuItems.map((item, idx) => (
-          <Link
-            key={idx}
-            href={item.href}
-            title={item.label}
-            aria-label={item.label}
-            className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
-              item.active
-                ? "bg-gray-900 text-white shadow-md scale-105"
-                : "text-gray-500 hover:bg-white/55 hover:text-gray-800"
-            }`}
-          >
-            {item.icon}
-          </Link>
-        ))}
-      </nav>
-    </aside>
-  )
-}
-
-function Header() {
-  const navTabs = ["Overview", "Vehicles", "Drivers", "Routes", "Reports"]
-
-  return (
-    <div className="space-y-6">
-      <div className="relative flex items-center justify-center gap-6">
-        <div className="flex items-center gap-2 flex-wrap">
-          {navTabs.map((tab) => (
-            <button
-              key={tab}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                tab === "Overview"
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "text-gray-600 hover:bg-white/50 hover:text-gray-900"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-        <div className="absolute right-0 flex items-center gap-3 shrink-0">
-          <button className="w-11 h-11 rounded-full glass-panel flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
-            <IconSearch />
-          </button>
-          <button className="w-11 h-11 rounded-full glass-panel flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
-            <IconNotification />
-          </button>
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-semibold shadow-md ring-2 ring-white/80">
-            J
+        <div className="lg:col-span-7 space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FleetStatusPie />
+            <FuelBreakdownPie />
           </div>
+          <FuelTrendChart />
         </div>
       </div>
-      <div className="relative max-w-md">
-        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
-          <IconSearch />
-        </div>
-        <input
-          type="text"
-          placeholder="Search vehicles, drivers, routes..."
-          className="w-full pl-14 pr-5 py-3.5 glass-panel rounded-full text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <TripStatusPanel />
+        <RevenueSummaryCard />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <MaintenanceSchedule />
+        <DriverStatusGrid />
       </div>
     </div>
   )
 }
+
+
 
 function DashboardTitle() {
   return (
-    <div className="flex items-start justify-between gap-6">
+    <div className="flex items-start justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Fleet Operations</h1>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Fleet Operations</h1>
         <p className="text-gray-500 text-sm mt-2 max-w-xl">
           Monitor vehicles, drivers, routes, fuel consumption, and fleet performance in real time.
         </p>
       </div>
-      <div className={`${softCard} px-5 py-3 text-right shrink-0`}>
+      <div className={`${softCard} px-4 py-2.5 text-right shrink-0`}>
         <div className="text-xs text-gray-400 uppercase tracking-wide">Created on</div>
         <div className="text-sm font-semibold text-gray-800 mt-0.5">August 20, 2024</div>
       </div>
@@ -216,22 +106,22 @@ function KPICards() {
   ]
 
   return (
-    <div className={`${glassCard} p-6 flex-1 flex flex-col`}>
-      <div className="text-base font-semibold text-gray-900 mb-5">Fleet Overview</div>
+    <div className={`${glassCard} p-4 flex-1 flex flex-col`}>
+      <div className="text-base font-semibold text-gray-900 mb-3">Fleet Overview</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
         {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-gray-100 rounded-[24px] p-5">
+          <div key={idx} className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-start justify-between">
-              <div className={`w-11 h-11 ${kpi.iconBg} rounded-2xl flex items-center justify-center ${kpi.iconColor}`}>
+              <div className={`w-10 h-10 ${kpi.iconBg} rounded-lg flex items-center justify-center ${kpi.iconColor}`}>
                 {kpi.icon}
               </div>
               <div className={`flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full ${kpi.positive ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                 {kpi.change}
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-3">
               <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">{kpi.label}</div>
-              <div className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</div>
+              <div className="text-xl font-bold text-gray-900 mt-0.5">{kpi.value}</div>
             </div>
           </div>
         ))}
@@ -245,22 +135,22 @@ function FleetCoverageCard() {
     <div className={`${glassCard} overflow-hidden flex-1 flex flex-col`}>
       <div className="flex flex-col lg:flex-row flex-1">
         {/* Left: Analytics */}
-        <div className="lg:w-1/3 p-5 border-b lg:border-b-0 lg:border-r border-white/40">
+        <div className="lg:w-1/3 p-4 border-b lg:border-b-0 lg:border-r border-white/40">
           <div>
             <div className="text-lg font-bold text-gray-900">Fleet Coverage</div>
             <div className="text-sm text-gray-500 mt-1">Real-time vehicle tracking</div>
           </div>
 
-          <div className="mt-4 text-center">
-            <div className="text-5xl font-extrabold text-blue-600">95%</div>
+          <div className="mt-2 text-center">
+            <div className="text-4xl font-extrabold text-orange-500">95%</div>
             <div className="text-sm text-gray-500 mt-1">Coverage</div>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 space-y-2">
             <div className={`${innerCard} p-3`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center">
-                  <IconTruck className="text-blue-600" />
+                <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+                  <IconTruck className="text-orange-600" />
                 </div>
                 <div>
                   <div className="text-xl font-bold text-gray-900">1,284</div>
@@ -270,7 +160,7 @@ function FleetCoverageCard() {
             </div>
             <div className={`${innerCard} p-3`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-50 rounded-2xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                   <IconMap className="text-green-600" />
                 </div>
                 <div>
@@ -281,7 +171,7 @@ function FleetCoverageCard() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-3">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <IconRefresh className="w-4 h-4" />
               <span>Updated 2 min ago</span>
@@ -290,7 +180,7 @@ function FleetCoverageCard() {
         </div>
 
         {/* Right: Map */}
-        <div className="lg:w-2/3 relative min-h-[380px] m-4 lg:m-5 rounded-[28px] overflow-hidden">
+        <div className="lg:w-2/3 relative min-h-[300px] m-4 lg:m-5 rounded-xl overflow-hidden">
           <div className="absolute inset-0">
             <SriLankaMap />
           </div>
@@ -364,15 +254,15 @@ function InfluencerDriversTable() {
   ]
 
   return (
-    <div className={`${glassCard} p-6`}>
-      <div className="flex items-center justify-between mb-5">
+    <div className={`${glassCard} p-4`}>
+      <div className="flex items-center justify-between mb-3">
         <div className="text-base font-semibold text-gray-900">Influencer Drivers</div>
         <button className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 soft-card px-4 py-2 rounded-full hover:text-gray-900 transition-colors">
           <IconPlus />
           Add Driver
         </button>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {drivers.map((driver, idx) => (
           <div
             key={idx}
@@ -410,8 +300,8 @@ function FleetStatusPie() {
   const stroke = 28
 
   return (
-    <div className={`${glassCard} p-6`}>
-      <div className="text-base font-semibold text-gray-900 mb-5">Fleet Status</div>
+    <div className={`${glassCard} p-4`}>
+      <div className="text-base font-semibold text-gray-900 mb-3">Fleet Status</div>
       <div className="flex flex-col items-center">
         <div className="relative">
           <svg viewBox="0 0 200 200" className="w-44 h-44">
@@ -433,7 +323,7 @@ function FleetStatusPie() {
             <text x={cx} y={cy + 14} textAnchor="middle" fill="#6b7280" fontSize="11">Total</text>
           </svg>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
           {data.map((d, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: d.color }}></span>
@@ -462,8 +352,8 @@ function FuelBreakdownPie() {
   const stroke = 28
 
   return (
-    <div className={`${glassCard} p-6`}>
-      <div className="text-base font-semibold text-gray-900 mb-5">Fuel Breakdown</div>
+    <div className={`${glassCard} p-4`}>
+      <div className="text-base font-semibold text-gray-900 mb-3">Fuel Breakdown</div>
       <div className="flex flex-col items-center">
         <div className="relative">
           <svg viewBox="0 0 200 200" className="w-44 h-44">
@@ -486,7 +376,7 @@ function FuelBreakdownPie() {
             <text x={cx} y={cy + 14} textAnchor="middle" fill="#6b7280" fontSize="11">Usage</text>
           </svg>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
           {data.map((d, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: d.color }}></span>
@@ -510,8 +400,8 @@ function TripStatusPanel() {
 
   return (
     <div className="lg:col-span-5">
-      <div className={`${glassCard} p-6`}>
-        <div className="flex items-center justify-between mb-5">
+      <div className={`${glassCard} p-4`}>
+        <div className="flex items-center justify-between mb-3">
           <div className="text-base font-semibold text-gray-900">Trip Status</div>
           <span className="text-xs text-gray-500">Today</span>
         </div>
@@ -524,7 +414,7 @@ function TripStatusPanel() {
             </div>
           ))}
         </div>
-        <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
           <IconRefresh className="w-3.5 h-3.5" />
           <span>246 total trips today</span>
         </div>
@@ -551,8 +441,8 @@ function FuelTrendChart() {
   const area = `${line} L ${points[points.length - 1].x} ${h - padding} L ${points[0].x} ${h - padding} Z`
 
   return (
-    <div className={`${glassCard} p-6`}>
-      <div className="flex items-center justify-between mb-5">
+    <div className={`${glassCard} p-4`}>
+      <div className="flex items-center justify-between mb-3">
         <div className="text-base font-semibold text-gray-900">Fuel Consumption Trend</div>
         <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700`}>-8% vs last week</span>
       </div>
@@ -596,15 +486,15 @@ function AlertsFeed() {
   ]
 
   return (
-    <div className={`${glassCard} p-6`}>
-      <div className="flex items-center justify-between mb-5">
+    <div className={`${glassCard} p-4`}>
+      <div className="flex items-center justify-between mb-3">
         <div className="text-base font-semibold text-gray-900">Live Alerts</div>
         <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
           <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
           5 new
         </span>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {alerts.map((a, i) => (
           <div key={i} className={`${softCard} px-4 py-3 flex items-start gap-3 hover:shadow-md transition-shadow`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${a.tone}`}>{a.icon}</div>
@@ -622,8 +512,8 @@ function AlertsFeed() {
 function RevenueSummaryCard() {
   return (
     <div className="lg:col-span-7">
-      <div className={`${glassCard} p-6`}>
-        <div className="flex items-center justify-between mb-5">
+      <div className={`${glassCard} p-4`}>
+        <div className="flex items-center justify-between mb-3">
           <div className="text-base font-semibold text-gray-900">Revenue Summary</div>
           <span className="text-xs text-gray-500">This month</span>
         </div>
@@ -667,19 +557,19 @@ function MaintenanceSchedule() {
 
   return (
     <div className="lg:col-span-6">
-      <div className={`${glassCard} p-6`}>
-        <div className="flex items-center justify-between mb-5">
+      <div className={`${glassCard} p-4`}>
+        <div className="flex items-center justify-between mb-3">
           <div className="text-base font-semibold text-gray-900">Maintenance Schedule</div>
           <button className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 soft-card px-4 py-2 rounded-full hover:text-gray-900 transition-colors">
             <IconTools className="w-3.5 h-3.5" />
             View All
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {vehicles.map((v, i) => (
             <div key={i} className={`${softCard} px-5 py-4 flex items-center justify-between gap-4`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-600">
+                <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600">
                   <IconTruck className="w-5 h-5" />
                 </div>
                 <div>
@@ -719,8 +609,8 @@ function DriverStatusGrid() {
 
   return (
     <div className="lg:col-span-6">
-      <div className={`${glassCard} p-6`}>
-        <div className="flex items-center justify-between mb-5">
+      <div className={`${glassCard} p-4`}>
+        <div className="flex items-center justify-between mb-3">
           <div className="text-base font-semibold text-gray-900">Driver Status</div>
           <div className="flex items-center gap-3 text-xs text-gray-500">
             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span>Online</span>
@@ -928,3 +818,5 @@ function IconHelp({ className }: { className?: string }) {
     </svg>
   )
 }
+
+

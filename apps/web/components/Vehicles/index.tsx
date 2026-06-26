@@ -1,46 +1,105 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 
-const glassCard = "glass-card rounded-[36px]"
-const softCard = "soft-card rounded-[24px]"
-const innerCard = "soft-card rounded-[20px]"
+const glassCard = "glass-card rounded-2xl"
+const softCard = "soft-card rounded-xl"
+const innerCard = "soft-card rounded-lg"
 
-const buses = [
-  { id: "WP-ABC-1234", type: "Long Route", capacity: "45+15", route: "Colombo → Kandy", depot: "Colombo Central", status: "active", driver: "Nimal Perera", conductor: "Saman K.", shift: "Morning", km: 245, fuel: 42, revenue: "Rs 48,200", trips: 4, onTime: "94%", passengers: 52, ac: true, cctv: true, gps: true, wheelchair: false, year: 2021, insurance: "Dec 2026", license: "Mar 2027", emission: "Sep 2026", fitness: "Jun 2027" },
-  { id: "WP-DEF-5678", type: "Short Route", capacity: "35+10", route: "Colombo → Galle", depot: "Galle Depot", status: "active", driver: "Kasun Silva", conductor: "Ruwan P.", shift: "Afternoon", km: 180, fuel: 38, revenue: "Rs 32,500", trips: 6, onTime: "88%", passengers: 38, ac: true, cctv: true, gps: true, wheelchair: true, year: 2022, insurance: "Aug 2026", license: "Jan 2027", emission: "Nov 2026", fitness: "Apr 2027" },
-  { id: "SP-GHI-9012", type: "Luxury", capacity: "40+0", route: "Colombo → Jaffna", depot: "Colombo North", status: "maintenance", driver: "—", conductor: "—", shift: "—", km: 0, fuel: 0, revenue: "Rs 0", trips: 0, onTime: "—", passengers: 0, ac: true, cctv: true, gps: true, wheelchair: false, year: 2020, insurance: "Oct 2026", license: "May 2027", emission: "Jul 2026", fitness: "Feb 2027" },
-  { id: "CP-JKL-3456", type: "Mini Bus", capacity: "25+8", route: "Kandy → Nuwara Eliya", depot: "Kandy Depot", status: "active", driver: "Tharindu J.", conductor: "Amila R.", shift: "Morning", km: 120, fuel: 28, revenue: "Rs 18,600", trips: 5, onTime: "91%", passengers: 28, ac: false, cctv: true, gps: true, wheelchair: false, year: 2019, insurance: "Apr 2026", license: "Feb 2027", emission: "Aug 2026", fitness: "Dec 2026" },
-  { id: "WP-MNO-7890", type: "Semi-Luxury", capacity: "42+12", route: "Colombo → Matara", depot: "Colombo South", status: "active", driver: "Dinesh Kumar", conductor: "Pradeep W.", shift: "Night", km: 310, fuel: 55, revenue: "Rs 62,800", trips: 3, onTime: "85%", passengers: 48, ac: true, cctv: false, gps: true, wheelchair: false, year: 2023, insurance: "Jan 2027", license: "Jun 2027", emission: "Oct 2026", fitness: "Aug 2027" },
-  { id: "SG-PQR-2345", type: "Long Route", capacity: "50+18", route: "Galle → Kandy", depot: "Galle Depot", status: "idle", driver: "Saman B.", conductor: "—", shift: "—", km: 0, fuel: 0, revenue: "Rs 0", trips: 0, onTime: "—", passengers: 0, ac: true, cctv: true, gps: true, wheelchair: true, year: 2021, insurance: "Nov 2026", license: "Apr 2027", emission: "Jun 2026", fitness: "Jan 2027" },
-]
+
 
 const statusColors: Record<string, string> = {
   active: "bg-green-500",
   maintenance: "bg-orange-500",
   idle: "bg-gray-400",
+  retired: "bg-red-500",
 }
 
 const statusTones: Record<string, string> = {
   active: "bg-green-50 text-green-700",
   maintenance: "bg-orange-50 text-orange-700",
   idle: "bg-gray-100 text-gray-600",
+  retired: "bg-red-50 text-red-700",
 }
 
 const statusLabels: Record<string, string> = {
   active: "Active",
   maintenance: "In Maintenance",
   idle: "Idle",
+  retired: "Retired",
 }
 
-const filters = ["All", "Active", "In Maintenance", "Idle"]
+const filters = ["All", "Active", "In Maintenance", "Idle", "Retired"]
+
+import { useSearchParams } from "next/navigation"
 
 export function VehiclesPage() {
+  const [buses, setBuses] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState("All")
   const [selectedBus, setSelectedBus] = useState<string | null>(null)
+  
+  const searchParams = useSearchParams()
+  const searchQuery = searchParams.get("search") || ""
 
-  const filtered = activeFilter === "All" ? buses : buses.filter(b => statusLabels[b.status] === activeFilter)
+  useEffect(() => {
+    async function fetchVehicles() {
+      try {
+        const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+        const res = await fetch("/api/vehicles", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const mappedBuses = data.map((v: any) => {
+            const assignedDriver = v.drivers && v.drivers.length > 0 ? v.drivers[0].fullName : "—";
+            const routeName = v.drivers && v.drivers.length > 0 && v.drivers[0].assignedRouteId ? "Assigned via Driver" : "Unassigned"; 
+            
+            return {
+              id: v.registrationNumber,
+              dbId: v.id,
+              type: `${v.make} ${v.model}`,
+              capacity: v.capacity || 40,
+              route: routeName,
+              depot: "—",
+              status: v.status === "IN_USE" ? "active" : v.status === "MAINTENANCE" ? "maintenance" : v.status === "RETIRED" ? "retired" : "idle",
+              driver: assignedDriver,
+              conductor: "—",
+              shift: "—",
+              km: v.mileageKm || 0,
+              fuel: v.fuelUsageAvg || 0,
+              revenue: "Rs 0", // Mock
+              trips: 0, // Mock
+              onTime: "—", // Mock
+              passengers: 0, // Mock
+              ac: v.features?.includes("AC") || false,
+              cctv: v.features?.includes("CCTV") || false,
+              gps: v.features?.includes("GPS") || false,
+              wheelchair: v.features?.includes("WHEELCHAIR") || false,
+              year: v.year,
+              insurance: v.insuranceExpiry ? new Date(v.insuranceExpiry).toLocaleDateString() : "—",
+              fitness: v.roadworthinessExpiry ? new Date(v.roadworthinessExpiry).toLocaleDateString() : "—",
+              emission: "—",
+              license: v.registrationExpiry ? new Date(v.registrationExpiry).toLocaleDateString() : "—",
+              lastServiceDate: v.lastServiceDate ? new Date(v.lastServiceDate).toLocaleDateString() : "—",
+              nextServiceDate: v.nextServiceDate ? new Date(v.nextServiceDate).toLocaleDateString() : "—"
+            }
+          })
+          const sortedBuses = mappedBuses.sort((a: any, b: any) => a.id.localeCompare(b.id))
+          setBuses(sortedBuses)
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchVehicles()
+  }, [])
+
+  const baseFiltered = activeFilter === "All" ? buses : buses.filter(b => statusLabels[b.status] === activeFilter)
+  const filtered = baseFiltered.filter(b => b.id.toLowerCase().includes(searchQuery.toLowerCase()) || b.route.toLowerCase().includes(searchQuery.toLowerCase()))
   const selected = buses.find(b => b.id === selectedBus)
 
   const totalBuses = buses.length
@@ -50,27 +109,17 @@ export function VehiclesPage() {
   const avgFuel = Math.round(buses.filter(b => b.status === "active").reduce((s, b) => s + b.fuel, 0) / activeBuses)
 
   return (
-    <div className="min-h-screen flex fleet-bg">
-      <div className="flex flex-col items-center pl-5 pt-8 flex-shrink-0">
-        <div className="mb-4 shrink-0">
-          <Link href="/dashboard" className="text-xl font-bold tracking-tight text-gray-800">CeyTrex</Link>
-        </div>
-        <Sidebar current="vehicles" />
-      </div>
-      <main className="flex-1 p-6 pr-8 min-w-0">
-        <Header />
-        <div className="mt-6 flex items-center justify-between mb-6">
+    <div className="relative">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Vehicles</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage and monitor your bus fleet</p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Fleet Management</h1>
+            <p className="text-gray-500 text-sm mt-1">Monitor live operations, capacity, and active status of all vehicles</p>
           </div>
-          <button className="bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors">
-            + Add Vehicle
-          </button>
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           <StatCard label="Total Buses" value={totalBuses.toString()} color="text-gray-900" />
           <StatCard label="Active" value={activeBuses.toString()} color="text-green-600" />
           <StatCard label="Maintenance" value={maintBuses.toString()} color="text-orange-600" />
@@ -79,13 +128,13 @@ export function VehiclesPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-4">
           {filters.map(f => (
             <button
               key={f}
               onClick={() => { setActiveFilter(f); setSelectedBus(null) }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                activeFilter === f ? "bg-gray-900 text-white shadow-md" : "text-gray-600 hover:bg-white/50"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeFilter === f ? "bg-[#1a1a1a] text-white shadow-sm" : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
               }`}
             >
               {f}
@@ -93,16 +142,16 @@ export function VehiclesPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Bus Grid */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="lg:col-span-5 space-y-3">
             {filtered.map(bus => (
               <div
                 key={bus.id}
                 onClick={() => setSelectedBus(bus.id === selectedBus ? null : bus.id)}
-                className={`${glassCard} p-5 cursor-pointer transition-all hover:shadow-lg ${selectedBus === bus.id ? "ring-2 ring-blue-500" : ""}`}
+                className={`${glassCard} p-4 cursor-pointer transition-all hover:shadow-lg ${selectedBus === bus.id ? "ring-2 ring-blue-500" : ""}`}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div>
                     <div className="text-base font-bold text-gray-900">{bus.id}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{bus.type} • {bus.capacity} seats</div>
@@ -137,7 +186,7 @@ export function VehiclesPage() {
             {selected ? (
               <BusDetailPanel bus={selected} />
             ) : (
-              <div className={`${glassCard} p-12 flex items-center justify-center min-h-[500px]`}>
+              <div className={`${glassCard} p-8 flex items-center justify-center min-h-[500px]`}>
                 <div className="text-center">
                   <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                     <rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
@@ -148,7 +197,7 @@ export function VehiclesPage() {
             )}
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
@@ -294,90 +343,7 @@ function ActionButton({ label, variant = "default" }: { label: string; variant?:
   )
 }
 
-function Header() {
-  const navTabs = ["Overview", "Vehicles", "Drivers", "Routes", "Reports"]
 
-  return (
-    <div className="space-y-6">
-      <div className="relative flex items-center justify-center gap-6">
-        <div className="flex items-center gap-2 flex-wrap">
-          {navTabs.map((tab) => (
-            <Link
-              key={tab}
-              href={tab === "Overview" ? "/dashboard" : "#"}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
-                tab === "Vehicles"
-                  ? "bg-gray-900 text-white shadow-md"
-                  : "text-gray-600 hover:bg-white/50 hover:text-gray-900"
-              }`}
-            >
-              {tab}
-            </Link>
-          ))}
-        </div>
-        <div className="absolute right-0 flex items-center gap-3 shrink-0">
-          <button className="w-11 h-11 rounded-full glass-panel flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
-            <IconSearch />
-          </button>
-          <button className="w-11 h-11 rounded-full glass-panel flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
-            <IconNotification />
-          </button>
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-semibold shadow-md ring-2 ring-white/80">
-            J
-          </div>
-        </div>
-      </div>
-      <div className="relative max-w-md">
-        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
-          <IconSearch />
-        </div>
-        <input
-          type="text"
-          placeholder="Search buses, routes, registrations..."
-          className="w-full pl-14 pr-5 py-3.5 glass-panel rounded-full text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
-        />
-      </div>
-    </div>
-  )
-}
-
-function Sidebar({ current }: { current: string }) {
-  const items = [
-    { icon: <IconDashboard />, label: "Dashboard", href: "/dashboard" },
-    { icon: <IconFleet />, label: "Fleet Overview", href: "#" },
-    { icon: <IconTruck />, label: "Vehicles", href: "/dashboard/vehicles", active: current === "vehicles" },
-    { icon: <IconUsers />, label: "Drivers", href: "#" },
-    { icon: <IconMap />, label: "Routes", href: "#" },
-    { icon: <IconDocument />, label: "Trips", href: "#" },
-    { icon: <IconTools />, label: "Maintenance", href: "#" },
-    { icon: <IconFuel />, label: "Fuel Management", href: "#" },
-    { icon: <IconBell />, label: "Alerts", href: "#" },
-    { icon: <IconChart />, label: "Reports", href: "#" },
-  ]
-
-  return (
-    <aside className="glass-panel w-[72px] rounded-[40px] py-5 px-3 flex flex-col items-center min-h-[650px]">
-      <nav className="flex flex-col items-center gap-1.5 flex-1">
-        {items.map((item, idx) => (
-          <Link
-            key={idx}
-            href={item.href}
-            title={item.label}
-            className={`w-11 h-11 flex items-center justify-center rounded-full transition-all duration-200 ${
-              item.active
-                ? "bg-gray-900 text-white shadow-md scale-105"
-                : "text-gray-500 hover:bg-white/55 hover:text-gray-800"
-            }`}
-          >
-            {item.icon}
-          </Link>
-        ))}
-      </nav>
-    </aside>
-  )
-}
-
-/* ── Icons ── */
 function IconDashboard({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> }
 function IconFleet({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> }
 function IconTruck({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> }
@@ -390,3 +356,5 @@ function IconBell({ className }: { className?: string }) { return <svg width="20
 function IconChart({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> }
 function IconSearch({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> }
 function IconNotification({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> }
+
+

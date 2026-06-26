@@ -2,18 +2,39 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { register } from "@/lib/auth"
 
 export default function RegisterPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
     setIsLoading(true)
-    // TODO: Implement signup logic here
-    setTimeout(() => setIsLoading(false), 1000)
+
+    try {
+      await register(email, password)
+      router.push("/dashboard")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -35,6 +56,12 @@ export default function RegisterPage() {
             <p className="text-white/70 text-lg mb-10">Join us to manage your fleet efficiently</p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+                  {error}
+                </p>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-white/80 text-sm mb-2 ml-1">First Name</label>
@@ -59,6 +86,8 @@ export default function RegisterPage() {
                 <Input
                   type="email"
                   placeholder="Johndoe@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -68,6 +97,9 @@ export default function RegisterPage() {
                 <Input
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
                   required
                 />
               </div>
@@ -77,6 +109,9 @@ export default function RegisterPage() {
                 <Input
                   type="password"
                   placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  minLength={8}
                   required
                 />
               </div>

@@ -1,6 +1,5 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -13,10 +12,167 @@ model User {
   password  String
   role      Role     @default(MANAGER)
   createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   MANAGER
   DRIVER
+}
+
+model Company {
+  id        String    @id @default(cuid())
+  name      String
+  logoUrl   String?
+  domain    String?   @unique
+  status    CompanyStatus @default(ACTIVE)
+  
+  users     User[]
+  vehicles  Vehicle[]
+  drivers   Driver[]
+  routes    Route[]
+  createdAt DateTime  @default(now())
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+model Vehicle {
+  id                 String        @id @default(cuid())
+  make               String
+  model              String
+  year               Int
+  registrationNumber String
+  status             VehicleStatus @default(AVAILABLE)
+
+  // Operational
+  capacity           Int           @default(40)
+  features           String[]
+
+  // Compliance
+  insuranceExpiry      DateTime?
+  roadworthinessExpiry DateTime?
+  registrationExpiry   DateTime?
+
+  // Performance
+  mileageKm          Float         @default(0)
+  fuelUsageAvg       Float         @default(0)
+  lastServiceDate    DateTime?
+  nextServiceDate    DateTime?
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  drivers            Driver[]
+
+  companyId          String
+  company            Company       @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, registrationNumber])
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  RETIRED
+}
+
+model Driver {
+  id                String   @id @default(cuid())
+  // Personal details
+  fullName          String
+  dateOfBirth       DateTime
+  address           String
+  contactNumber     String
+  email             String
+  
+  // Government ID
+  nationalId        String
+  
+  // Driver's license
+  licenseNumber     String
+  licenseType       String
+  licenseExpiry     DateTime
+  
+  // Profile photo
+  photoUrl          String?
+
+  // Professional Credentials
+  experienceYears   Int
+  previousEmployers String?
+  routeFamiliarity  String?
+  trainingCerts     String[] 
+  
+  assignedVehicleId String?
+  assignedVehicle   Vehicle? @relation(fields: [assignedVehicleId], references: [id])
+  assignedRouteId   String?
+  assignedRoute     Route?   @relation(fields: [assignedRouteId], references: [id])
+
+  // Legal & Compliance
+  policeClearance   Boolean  @default(false)
+  medicalFitness    Boolean  @default(false)
+  insuranceCoverage Boolean  @default(false)
+  transportApproval Boolean  @default(false)
+
+  status            DriverStatus @default(ACTIVE)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  companyId         String
+  company           Company  @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, email])
+  @@unique([companyId, nationalId])
+  @@unique([companyId, licenseNumber])
+}
+
+enum RouteType {
+  CITY
+  SUBURBAN
+  LONG_DISTANCE
+  EXPRESS
+  NIGHT
+}
+
+model Route {
+  id                    String   @id @default(cuid())
+  routeCode             String
+  startPoint            String
+  endPoint              String
+  intermediateStops     String[]
+  distanceKm            Float
+  estimatedDurationMins Int
+  operatingHours        String
+  routeType             RouteType
+  
+  // Analytics
+  punctualityScore      Int      @default(100) // Percentage
+  complaintsCount       Int      @default(0)
+  safetyIncidents       Int      @default(0)
+  
+  // Relations
+  assignedDrivers       Driver[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, routeCode])
+}
+
+enum DriverStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  INACTIVE
 }

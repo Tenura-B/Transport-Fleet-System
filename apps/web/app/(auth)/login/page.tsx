@@ -6,24 +6,37 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { login } from "@/lib/auth"
 
 export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // TODO: Implement login logic here
-    setTimeout(() => {
+    setError("")
+
+    try {
+      const data = await login(email, password)
+      if (data.user.role === 'SUPER_ADMIN') {
+        router.push("/admin/companies")
+      } else {
+        router.push("/dashboard")
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed")
+    } finally {
       setIsLoading(false)
-      router.push("/dashboard")
-    }, 1000)
+    }
   }
 
   return (
-    <div className="w-full max-w-6xl">
+    <div className="w-full max-w-6xl" style={{ zoom: 0.8 }}>
       <Card className="overflow-hidden min-h-[700px]">
         <div className="grid lg:grid-cols-2">
           {/* Left: Login Form */}
@@ -41,11 +54,19 @@ export default function LoginPage() {
             <p className="text-white/70 text-lg mb-10">Please Enter your Account details</p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+                  {error}
+                </p>
+              )}
+
               <div>
                 <label className="block text-white/80 text-sm mb-2 ml-1">Email</label>
                 <Input
                   type="email"
                   placeholder="Johndoe@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -55,6 +76,8 @@ export default function LoginPage() {
                 <Input
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
