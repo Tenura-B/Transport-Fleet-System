@@ -1,5 +1,4 @@
 import React from "react"
-import Link from "next/link"
 import { SriLankaMap } from "./SriLankaMap"
 
 const glassCard = "glass-card rounded-2xl"
@@ -11,33 +10,28 @@ export function FleetDashboard() {
     <div className="space-y-5">
       <DashboardTitle />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 flex">
+        <div className="lg:col-span-7 flex">
           <div className="w-full flex flex-col">
             <KPICards />
           </div>
         </div>
-        <div className="lg:col-span-7 flex">
+        <div className="lg:col-span-5">
+          <RevenueSummaryCard />
+        </div>
+      </div>
+      <div className="grid grid-cols-1">
+        <div className="flex">
           <div className="w-full flex flex-col">
             <FleetCoverageCard />
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 space-y-5">
-          <AlertsFeed />
-        </div>
-        <div className="lg:col-span-7 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FleetStatusPie />
-            <FuelBreakdownPie />
-          </div>
-          <FuelTrendChart />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <FleetStatusPie />
+        <FuelBreakdownPie />
         <TripStatusPanel />
-        <RevenueSummaryCard />
       </div>
+      <FuelTrendChart />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <MaintenanceSchedule />
         <DriverStatusGrid />
@@ -106,7 +100,7 @@ function KPICards() {
   ]
 
   return (
-    <div className={`${glassCard} p-4 flex-1 flex flex-col`}>
+    <div className={`${glassCard} p-4 h-full flex flex-col`}>
       <div className="text-base font-semibold text-gray-900 mb-3">Fleet Overview</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
         {kpis.map((kpi, idx) => (
@@ -399,25 +393,23 @@ function TripStatusPanel() {
   ]
 
   return (
-    <div className="lg:col-span-5">
-      <div className={`${glassCard} p-4`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-base font-semibold text-gray-900">Trip Status</div>
-          <span className="text-xs text-gray-500">Today</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {trips.map((t, i) => (
-            <div key={i} className={`${innerCard} p-4 text-center`}>
-              <div className={`w-3 h-3 ${t.color} rounded-full mx-auto mb-2`}></div>
-              <div className="text-2xl font-bold text-gray-900">{t.count}</div>
-              <div className={`text-xs font-semibold mt-1 px-2 py-0.5 rounded-full inline-block ${t.tone}`}>{t.status}</div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-          <IconRefresh className="w-3.5 h-3.5" />
-          <span>246 total trips today</span>
-        </div>
+    <div className={`${glassCard} p-4 h-full flex flex-col`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-base font-semibold text-gray-900">Trip Status</div>
+        <span className="text-xs text-gray-500">Today</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {trips.map((t, i) => (
+          <div key={i} className={`${innerCard} p-4 text-center`}>
+            <div className={`w-3 h-3 ${t.color} rounded-full mx-auto mb-2`}></div>
+            <div className="text-2xl font-bold text-gray-900">{t.count}</div>
+            <div className={`text-xs font-semibold mt-1 px-2 py-0.5 rounded-full inline-block ${t.tone}`}>{t.status}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+        <IconRefresh className="w-3.5 h-3.5" />
+        <span>246 total trips today</span>
       </div>
     </div>
   )
@@ -476,71 +468,36 @@ function FuelTrendChart() {
   )
 }
 
-function AlertsFeed() {
-  const alerts = [
-    { type: "speed", msg: "Vehicle KL-2345 exceeded 100 km/h", time: "2 min ago", tone: "bg-red-50 text-red-600", icon: "!" },
-    { type: "fuel", msg: "Low fuel alert: Bus WP-5678", time: "8 min ago", tone: "bg-orange-50 text-orange-600", icon: "F" },
-    { type: "geofence", msg: "Truck SP-1234 left Colombo zone", time: "15 min ago", tone: "bg-blue-50 text-blue-600", icon: "G" },
-    { type: "maint", msg: "Van GQ-9012 service due tomorrow", time: "1 hr ago", tone: "bg-yellow-50 text-yellow-700", icon: "M" },
-    { type: "safe", msg: "Harsh braking detected: KL-4567", time: "2 hr ago", tone: "bg-red-50 text-red-600", icon: "B" },
-  ]
-
-  return (
-    <div className={`${glassCard} p-4`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-base font-semibold text-gray-900">Live Alerts</div>
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
-          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-          5 new
-        </span>
-      </div>
-      <div className="space-y-2">
-        {alerts.map((a, i) => (
-          <div key={i} className={`${softCard} px-4 py-3 flex items-start gap-3 hover:shadow-md transition-shadow`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${a.tone}`}>{a.icon}</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm text-gray-800 font-medium truncate">{a.msg}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{a.time}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function RevenueSummaryCard() {
   return (
-    <div className="lg:col-span-7">
-      <div className={`${glassCard} p-4`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-base font-semibold text-gray-900">Revenue Summary</div>
-          <span className="text-xs text-gray-500">This month</span>
+    <div className={`${glassCard} p-4 h-full flex flex-col`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-base font-semibold text-gray-900">Revenue Summary</div>
+        <span className="text-xs text-gray-500">This month</span>
+      </div>
+      <div className="grid grid-cols-2 gap-4 flex-1">
+        <div className={`${innerCard} p-4`}>
+          <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Revenue</div>
+          <div className="text-xl font-bold text-gray-900 mt-1">Rs 4.2M</div>
+          <div className="text-xs font-semibold text-green-600 mt-1">+18%</div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className={`${innerCard} p-4`}>
-            <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Revenue</div>
-            <div className="text-xl font-bold text-gray-900 mt-1">Rs 4.2M</div>
-            <div className="text-xs font-semibold text-green-600 mt-1">+18%</div>
+        <div className={`${innerCard} p-4`}>
+          <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Expenses</div>
+          <div className="text-xl font-bold text-gray-900 mt-1">Rs 2.8M</div>
+          <div className="text-xs font-semibold text-red-600 mt-1">+5%</div>
+        </div>
+        <div className={`${innerCard} p-4`}>
+          <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Profit</div>
+          <div className="text-xl font-bold text-green-600 mt-1">Rs 1.4M</div>
+          <div className="text-xs font-semibold text-green-600 mt-1">+32%</div>
+        </div>
+        <div className={`${innerCard} p-4`}>
+          <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Target</div>
+          <div className="text-xl font-bold text-gray-900 mt-1">Rs 5M</div>
+          <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full" style={{ width: "84%" }}></div>
           </div>
-          <div className={`${innerCard} p-4`}>
-            <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Expenses</div>
-            <div className="text-xl font-bold text-gray-900 mt-1">Rs 2.8M</div>
-            <div className="text-xs font-semibold text-red-600 mt-1">+5%</div>
-          </div>
-          <div className={`${innerCard} p-4`}>
-            <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Profit</div>
-            <div className="text-xl font-bold text-green-600 mt-1">Rs 1.4M</div>
-            <div className="text-xs font-semibold text-green-600 mt-1">+32%</div>
-          </div>
-          <div className={`${innerCard} p-4`}>
-            <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">Target</div>
-            <div className="text-xl font-bold text-gray-900 mt-1">Rs 5M</div>
-            <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full" style={{ width: "84%" }}></div>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">84% achieved</div>
-          </div>
+          <div className="text-xs text-gray-500 mt-1">84% achieved</div>
         </div>
       </div>
     </div>
@@ -556,8 +513,8 @@ function MaintenanceSchedule() {
   ]
 
   return (
-    <div className="lg:col-span-6">
-      <div className={`${glassCard} p-4`}>
+    <div className="lg:col-span-6 h-full">
+      <div className={`${glassCard} p-4 h-full flex flex-col`}>
         <div className="flex items-center justify-between mb-3">
           <div className="text-base font-semibold text-gray-900">Maintenance Schedule</div>
           <button className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 soft-card px-4 py-2 rounded-full hover:text-gray-900 transition-colors">
@@ -565,7 +522,7 @@ function MaintenanceSchedule() {
             View All
           </button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1">
           {vehicles.map((v, i) => (
             <div key={i} className={`${softCard} px-5 py-4 flex items-center justify-between gap-4`}>
               <div className="flex items-center gap-3">
@@ -608,8 +565,8 @@ function DriverStatusGrid() {
   }
 
   return (
-    <div className="lg:col-span-6">
-      <div className={`${glassCard} p-4`}>
+    <div className="lg:col-span-6 h-full">
+      <div className={`${glassCard} p-4 h-full flex flex-col`}>
         <div className="flex items-center justify-between mb-3">
           <div className="text-base font-semibold text-gray-900">Driver Status</div>
           <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -619,7 +576,7 @@ function DriverStatusGrid() {
             <span className="flex items-center gap-1"><span className="w-2 h-2 bg-gray-300 rounded-full"></span>Offline</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
           {drivers.map((d, i) => (
             <div key={i} className={`${softCard} p-4 flex flex-col items-center text-center hover:shadow-md transition-shadow`}>
               <div className="relative">
