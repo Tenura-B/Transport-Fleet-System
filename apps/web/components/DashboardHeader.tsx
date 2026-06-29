@@ -48,7 +48,9 @@ export function DashboardHeader() {
   const router = useRouter()
   const { user } = useAuth()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const alertsRef = useRef<HTMLDivElement>(null)
 
   const navTabs = [
     { label: "Overview", href: "/dashboard", exactMatch: true },
@@ -59,11 +61,21 @@ export function DashboardHeader() {
   ]
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : "U"
+  const alerts = [
+    { msg: "Vehicle KL-2345 exceeded 100 km/h", time: "2 min ago", tone: "bg-red-50 text-red-600", icon: "!" },
+    { msg: "Low fuel alert: Bus WP-5678", time: "8 min ago", tone: "bg-orange-50 text-orange-600", icon: "F" },
+    { msg: "Truck SP-1234 left Colombo zone", time: "15 min ago", tone: "bg-blue-50 text-blue-600", icon: "G" },
+    { msg: "Van GQ-9012 service due tomorrow", time: "1 hr ago", tone: "bg-yellow-50 text-yellow-700", icon: "M" },
+    { msg: "Harsh braking detected: KL-4567", time: "2 hr ago", tone: "bg-red-50 text-red-600", icon: "B" },
+  ]
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false)
+      }
+      if (alertsRef.current && !alertsRef.current.contains(event.target as Node)) {
+        setIsAlertsOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -119,13 +131,59 @@ export function DashboardHeader() {
           <button className="w-9 h-9 rounded-lg glass-panel flex items-center justify-center text-gray-500 hover:text-orange-600 transition-colors">
             <IconSearch />
           </button>
-          <button className="w-9 h-9 rounded-lg glass-panel flex items-center justify-center text-gray-500 hover:text-orange-600 transition-colors">
-            <IconNotification />
-          </button>
+          <div className="relative" ref={alertsRef}>
+            <button
+              onClick={() => {
+                setIsAlertsOpen(!isAlertsOpen)
+                setIsDropdownOpen(false)
+              }}
+              className="relative w-9 h-9 rounded-lg glass-panel flex items-center justify-center text-gray-500 hover:text-orange-600 transition-colors"
+              aria-label="Live alerts"
+              title="Live alerts"
+            >
+              <IconNotification />
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-4 text-center">
+                {alerts.length}
+              </span>
+            </button>
+
+            {isAlertsOpen && (
+              <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-xl border border-gray-100 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center justify-between px-1 pb-3 border-b border-gray-100">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Live Alerts</p>
+                    <p className="text-xs text-gray-500">{alerts.length} new fleet updates</p>
+                  </div>
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                </div>
+
+                <div className="mt-2 space-y-1.5">
+                  {alerts.map((alert, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors flex items-start gap-3"
+                    >
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${alert.tone}`}>
+                        {alert.icon}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs font-medium text-gray-800 truncate">{alert.msg}</span>
+                        <span className="block text-[11px] text-gray-400 mt-0.5">{alert.time}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="relative" ref={dropdownRef}>
             <button 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={() => {
+                setIsDropdownOpen(!isDropdownOpen)
+                setIsAlertsOpen(false)
+              }}
               className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm cursor-pointer hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-[#F4F6FB]" 
               title={user?.email}
             >
