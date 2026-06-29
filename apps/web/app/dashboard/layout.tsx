@@ -26,18 +26,16 @@ function IconHelp() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <div className="min-h-screen flex fleet-bg text-[13px]">
+      <div className="h-screen overflow-hidden flex fleet-bg text-[13px]">
         {/* Left Global Sidebar Panel */}
-        <div className="flex flex-col items-center pl-5 pt-5 flex-shrink-0">
+        <div className="flex flex-col items-center pl-5 pt-5 flex-shrink-0 h-full sticky top-0">
           <div className="mb-3 shrink-0">
-            {/* The dynamic logo is shown in the header now, but we can keep the static platform logo here, or remove it. 
-                Let's use a subtle icon for the platform home */}
             <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg text-white font-bold text-xl">
               C
             </div>
           </div>
           
-          <div className="flex-1 flex flex-col items-center pt-5">
+          <div className="flex-1 flex flex-col items-center pt-5 overflow-hidden">
             <DashboardSidebar />
             
             <div className="flex flex-col items-center gap-2 mt-3 mb-5">
@@ -58,12 +56,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col p-4 pr-8 min-w-0">
-          {/* Global Header */}
-          <DashboardHeader />
+        <main className="flex-1 flex flex-col p-4 pr-8 min-w-0 h-full overflow-hidden">
+          <div className="shrink-0">
+            <DashboardHeader />
+          </div>
           
-          {/* Page Specific Content */}
-          <div className="mt-5 flex-1 w-full">
+          <div className="mt-5 flex-1 w-full overflow-y-auto pr-2">
             {children}
           </div>
         </main>

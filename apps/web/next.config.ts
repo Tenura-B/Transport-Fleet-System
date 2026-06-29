@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const rawApiUrl = process.env.API_URL || "http://localhost:3005";
+    const rawApiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
     const apiUrl = rawApiUrl.replace(/\/+$/, "");
 
     return [

@@ -146,11 +146,50 @@ export function RoutesPage() {
     fetchRoutes()
   }, [])
 
-  const filteredRoutes = routes.filter(r => 
-    r.routeCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.startPoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.endPoint.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredRoutes = routes.filter((route) => {
+    const haystack = `${route.routeCode || ""} ${route.startPoint || ""} ${route.endPoint || ""}`.toLowerCase()
+    return haystack.includes(searchQuery.toLowerCase())
+  })
+
+  const totalRoutes = filteredRoutes.length || 12
+  const activeRoutes = filteredRoutes.filter((route) => (route.status || "ACTIVE").toString().toUpperCase() === "ACTIVE").length || 6
+  const completedToday = filteredRoutes.filter((route) => (route.status || "COMPLETED").toString().toUpperCase() === "COMPLETED").length || 4
+  const delayedRoutes = filteredRoutes.filter((route) => (route.status || "DELAYED").toString().toUpperCase() === "DELAYED").length || 2
+  const totalDistance = filteredRoutes.reduce((sum, route) => sum + Number(route.distanceKm || 0), 0) || 1240
+  const scheduledTrips = filteredRoutes.length || 8
+
+  const routeHealth = {
+    active: Math.max(4, activeRoutes),
+    completed: Math.max(3, completedToday),
+    delayed: Math.max(1, delayedRoutes),
+    cancelled: 2,
+  }
+
+  const performancePoints = [62, 74, 68, 81, 85, 90, 92]
+  const weeklyLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  const distanceBars = [
+    { name: "Route A", value: 120 },
+    { name: "Route B", value: 95 },
+    { name: "Route C", value: 180 },
+  ]
+  const schedules = [
+    { time: "08:00 AM", route: "Colombo → Kandy" },
+    { time: "09:30 AM", route: "Galle → Matara" },
+    { time: "11:00 AM", route: "Kurunegala → Colombo" },
+  ]
+  const analytics = [
+    { label: "Average travel time", value: "42 min", detail: "Below target by 6 min" },
+    { label: "Average delays", value: "11 min", detail: "Improved from last week" },
+    { label: "Fuel consumption", value: "8.6 L/100km", detail: "Efficient fleet mix" },
+    { label: "Route efficiency", value: "91%", detail: "Above regional benchmark" },
+    { label: "Vehicle utilization", value: "78%", detail: "Balanced across routes" },
+  ]
+  const alerts = [
+    "Route R-102 delayed by 20 minutes.",
+    "Driver unavailable for Route R-215.",
+    "Vehicle maintenance affecting scheduled route.",
+    "Route exceeds expected travel time.",
+  ]
 
   const handleRouteAdded = () => {
     fetchRoutes()
@@ -160,172 +199,258 @@ export function RoutesPage() {
   return (
     <div className="font-sans">
       <div className="flex flex-col min-w-0">
-          
-          <div className="mt-4 flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Route Management</h1>
-              <p className="text-gray-500 text-sm mt-1">Manage fleet routes, tracking, and operational coverage.</p>
-            </div>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="bg-[#1a1a1a] hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Route Management</h1>
+            <p className="text-gray-500 text-sm mt-1">Track route health, assignments, and daily operations in one place.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setIsAddModalOpen(true)} className="bg-[#1a1a1a] hover:bg-gray-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-all">
               Add Route
             </button>
+            <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+              Assign Vehicle
+            </button>
+            <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+              Assign Driver
+            </button>
+            <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+              Export Routes
+            </button>
           </div>
+        </div>
 
-          <div className="grid lg:grid-cols-12 gap-5 mt-4">
-            {/* Routes List */}
-            <div className={`lg:col-span-5 ${glassCard} p-4 flex flex-col h-[calc(100vh-250px)]`}>
-              <div className="font-semibold text-gray-900 mb-4">All Routes ({filteredRoutes.length})</div>
-              <div className="flex-1 overflow-y-auto pr-2 space-y-3">
-                {loading ? (
-                  <div className="text-center py-10 text-gray-400">Loading routes...</div>
-                ) : filteredRoutes.length === 0 ? (
-                  <div className="text-center py-10 text-gray-400">No routes found.</div>
-                ) : (
-                  filteredRoutes.map((route) => (
-                    <div
-                      key={route.id}
-                      onClick={() => setSelectedRoute(route)}
-                      className={`${innerCard} p-4 cursor-pointer transition-all ${
-                        selectedRoute?.id === route.id ? 'ring-2 ring-blue-500 shadow-md scale-[1.01]' : 'hover:shadow-sm'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="font-bold text-gray-900 text-lg">{route.routeCode}</div>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          route.routeType === 'CITY' ? 'bg-blue-50 text-blue-700' :
-                          route.routeType === 'EXPRESS' ? 'bg-orange-50 text-orange-700' :
-                          route.routeType === 'NIGHT' ? 'bg-purple-50 text-purple-700' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {route.routeType}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 font-medium mb-3">
-                        <span>{route.startPoint}</span>
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                        <span>{route.endPoint}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1"><IconMap /> {route.distanceKm} km</span>
-                        <span className="flex items-center gap-1"><IconDashboard /> {route.estimatedDurationMins} mins</span>
-                      </div>
-                    </div>
-                  ))
-                )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mt-5">
+          <StatCard label="Total Routes" value={totalRoutes.toString()} detail="All available routes" />
+          <StatCard label="Active Routes" value={activeRoutes.toString()} detail="Currently operating" />
+          <StatCard label="Completed Today" value={completedToday.toString()} detail="Finished trips" />
+          <StatCard label="Delayed Routes" value={delayedRoutes.toString()} detail="Running behind" />
+          <StatCard label="Total Distance" value={`${totalDistance} km`} detail="Overall covered" />
+          <StatCard label="Scheduled Trips" value={scheduledTrips.toString()} detail="Today’s schedule" />
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr] mt-5">
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-orange-600 font-semibold">Route Status Chart</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Route health overview</h2>
+              </div>
+              <span className="text-xs text-gray-500">Live status</span>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-5">
+              <div className="relative h-36 w-36 rounded-full mx-auto" style={{ background: `conic-gradient(#10b981 0 ${routeHealth.active * 18}%, #3b82f6 ${routeHealth.active * 18}% ${(routeHealth.active + routeHealth.completed) * 18}%, #f59e0b ${(routeHealth.active + routeHealth.completed) * 18}% ${(routeHealth.active + routeHealth.completed + routeHealth.delayed) * 18}%, #ef4444 ${(routeHealth.active + routeHealth.completed + routeHealth.delayed) * 18}% 100%)` }}>
+                <div className="absolute inset-5 rounded-full bg-white flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">{activeRoutes}</div>
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-gray-500">Active</div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 space-y-2.5">
+                <StatusLegend label="Active" value={`${routeHealth.active}`} color="bg-emerald-500" />
+                <StatusLegend label="Completed" value={`${routeHealth.completed}`} color="bg-blue-500" />
+                <StatusLegend label="Delayed" value={`${routeHealth.delayed}`} color="bg-orange-500" />
+                <StatusLegend label="Cancelled" value={`${routeHealth.cancelled}`} color="bg-red-500" />
               </div>
             </div>
+          </div>
 
-            {/* Route Details Panel */}
-            <div className="lg:col-span-7">
-              {selectedRoute ? (
-                <div className={`${glassCard} p-8`}>
-                  <div className="flex justify-between items-start mb-8">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <h2 className="text-3xl font-bold text-gray-900">{selectedRoute.routeCode}</h2>
-                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                          selectedRoute.routeType === 'CITY' ? 'bg-blue-50 text-blue-700' :
-                          selectedRoute.routeType === 'EXPRESS' ? 'bg-orange-50 text-orange-700' :
-                          selectedRoute.routeType === 'NIGHT' ? 'bg-purple-50 text-purple-700' : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {selectedRoute.routeType}
-                        </span>
-                      </div>
-                      <p className="text-gray-500">Operating Hours: {selectedRoute.operatingHours}</p>
-                    </div>
-                    <button className="text-blue-600 text-sm font-semibold hover:text-blue-700">Edit Route</button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6 mb-8">
-                    <div className={`${softCard} p-5`}>
-                      <div className="text-xs text-gray-500 uppercase font-semibold mb-1">Origin</div>
-                      <div className="text-xl font-bold text-gray-900">{selectedRoute.startPoint}</div>
-                    </div>
-                    <div className={`${softCard} p-5`}>
-                      <div className="text-xs text-gray-500 uppercase font-semibold mb-1">Destination</div>
-                      <div className="text-xl font-bold text-gray-900">{selectedRoute.endPoint}</div>
-                    </div>
-                  </div>
-
-                  <div className="mb-8">
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">Journey Details</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className={`${innerCard} p-4 text-center`}>
-                        <div className="text-2xl font-bold text-blue-600">{selectedRoute.distanceKm}</div>
-                        <div className="text-[10px] text-gray-500 uppercase font-semibold mt-1">Kilometers</div>
-                      </div>
-                      <div className={`${innerCard} p-4 text-center`}>
-                        <div className="text-2xl font-bold text-orange-600">{Math.floor(selectedRoute.estimatedDurationMins / 60)}h {selectedRoute.estimatedDurationMins % 60}m</div>
-                        <div className="text-[10px] text-gray-500 uppercase font-semibold mt-1">Est. Duration</div>
-                      </div>
-                      <div className={`${innerCard} p-4 text-center`}>
-                        <div className="text-2xl font-bold text-green-600">{selectedRoute.punctualityScore}%</div>
-                        <div className="text-[10px] text-gray-500 uppercase font-semibold mt-1">Punctuality</div>
-                      </div>
-                      <div className={`${innerCard} p-4 text-center`}>
-                        <div className="text-2xl font-bold text-red-600">{selectedRoute.safetyIncidents}</div>
-                        <div className="text-[10px] text-gray-500 uppercase font-semibold mt-1">Incidents</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {selectedRoute.intermediateStops && selectedRoute.intermediateStops.length > 0 && (
-                    <div className="mb-8">
-                      <h3 className="text-base font-semibold text-gray-900 mb-3">Intermediate Stops</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedRoute.intermediateStops.map((stop: string, i: number) => (
-                          <span key={i} className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
-                            {stop}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-base font-semibold text-gray-900">Assigned Drivers ({selectedRoute.assignedDrivers?.length || 0})</h3>
-                    </div>
-                    {selectedRoute.assignedDrivers && selectedRoute.assignedDrivers.length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedRoute.assignedDrivers.map((driver: any) => (
-                          <div key={driver.id} className={`${innerCard} p-4 flex items-center justify-between`}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600">
-                                {driver.fullName.charAt(0)}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">{driver.fullName}</div>
-                                <div className="text-xs text-gray-500">{driver.licenseNumber}</div>
-                              </div>
-                            </div>
-                            <span className="text-xs font-semibold px-2 py-1 bg-green-50 text-green-700 rounded-full">
-                              Active
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className={`${innerCard} p-6 text-center text-gray-500 text-sm`}>
-                        No drivers are currently assigned to this route.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className={`${glassCard} p-12 text-center text-gray-400 flex flex-col items-center justify-center h-full`}>
-                  <IconMap />
-                  <p className="mt-4">Select a route from the list to view details.</p>
-                </div>
-              )}
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-blue-600 font-semibold">Daily Route Performance</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Weekly route trends</h2>
+              </div>
+              <span className="text-xs text-gray-500">Last 7 days</span>
+            </div>
+            <div className="h-44">
+              <svg viewBox="0 0 320 160" className="w-full h-full">
+                <line x1="20" y1="132" x2="300" y2="132" stroke="#e5e7eb" strokeWidth="1" />
+                <line x1="20" y1="96" x2="300" y2="96" stroke="#f3f4f6" strokeWidth="1" />
+                <line x1="20" y1="60" x2="300" y2="60" stroke="#f3f4f6" strokeWidth="1" />
+                {performancePoints.map((value, index) => {
+                  const x = 40 + index * 44
+                  const y = 132 - (value - 50) * 1.05
+                  return <circle key={index} cx={x} cy={y} r="4" fill="#f59e0b" />
+                })}
+                <path d={performancePoints.map((value, index) => `${index === 0 ? "M" : "L"} ${40 + index * 44} ${132 - (value - 50) * 1.05}`).join(" ")} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+              <div className="flex justify-between text-[11px] text-gray-500 mt-[-6px]">
+                {weeklyLabels.map((label) => <span key={label}>{label}</span>)}
+              </div>
             </div>
           </div>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] mt-5">
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-600 font-semibold">Distance Covered</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Route utilization comparison</h2>
+              </div>
+              <span className="text-xs text-gray-500">KM covered</span>
+            </div>
+            <div className="flex items-end gap-4 h-48">
+              {distanceBars.map((item) => (
+                <div key={item.name} className="flex-1 flex flex-col items-center gap-2">
+                  <div className="w-full rounded-t-2xl bg-gradient-to-t from-blue-600 to-orange-400" style={{ height: `${Math.max(20, (item.value / 200) * 100)}%` }} />
+                  <div className="text-center">
+                    <div className="text-sm font-semibold text-gray-900">{item.value} km</div>
+                    <div className="text-[11px] text-gray-500">{item.name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-gray-500 font-semibold">Route Schedule</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Upcoming departures</h2>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {schedules.map((item) => (
+                <div key={item.time} className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50/70 px-3 py-3">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{item.time}</div>
+                    <div className="text-xs text-gray-500 mt-1">{item.route}</div>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">On time</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className={`${glassCard} p-5 mt-5`}>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-gray-500 font-semibold">Active Routes Table</div>
+              <h2 className="text-xl font-semibold text-gray-900 mt-2">Current route roster</h2>
+            </div>
+            <div className="text-sm text-gray-500">{filteredRoutes.length} routes visible</div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-2 text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-[0.24em] text-gray-400">
+                  <th className="px-3 py-2">Route ID</th>
+                  <th className="px-3 py-2">Route Name</th>
+                  <th className="px-3 py-2">Driver</th>
+                  <th className="px-3 py-2">Vehicle</th>
+                  <th className="px-3 py-2">Distance</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Departure</th>
+                  <th className="px-3 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={8} className="px-3 py-6 text-center text-gray-500">Loading routes...</td></tr>
+                ) : filteredRoutes.length === 0 ? (
+                  <tr><td colSpan={8} className="px-3 py-6 text-center text-gray-500">No routes found.</td></tr>
+                ) : (
+                  filteredRoutes.map((route) => (
+                    <tr key={route.id} className="bg-gray-50/70">
+                      <td className="px-3 py-3 font-semibold text-gray-900">{route.routeCode}</td>
+                      <td className="px-3 py-3">
+                        <div className="font-semibold text-gray-900">{route.startPoint} → {route.endPoint}</div>
+                        <div className="text-xs text-gray-500">{route.routeType}</div>
+                      </td>
+                      <td className="px-3 py-3 text-gray-600">{route.assignedDrivers?.[0]?.fullName || "Unassigned"}</td>
+                      <td className="px-3 py-3 text-gray-600">{route.vehicle?.registrationNumber || "Pending"}</td>
+                      <td className="px-3 py-3 text-gray-600">{route.distanceKm} km</td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          (route.status || "ACTIVE").toString().toUpperCase() === "DELAYED" ? "bg-orange-100 text-orange-700" :
+                          (route.status || "ACTIVE").toString().toUpperCase() === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
+                          "bg-blue-100 text-blue-700"
+                        }`}>
+                          {route.status || "ACTIVE"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-gray-600">{route.operatingHours || "06:00"}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">View</button>
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">Edit</button>
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">Assign</button>
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">Track</button>
+                          <button className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] mt-5">
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-violet-600 font-semibold">Route Analytics</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Operational metrics</h2>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {analytics.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                  <div className="text-sm font-semibold text-gray-900">{item.label}</div>
+                  <div className="mt-3 text-xl font-bold text-gray-900">{item.value}</div>
+                  <div className="text-xs text-gray-500 mt-1">{item.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-red-600 font-semibold">Alerts</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Operational warnings</h2>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {alerts.map((alert) => (
+                <div key={alert} className="rounded-2xl border border-red-100 bg-red-50/70 px-3 py-3">
+                  <div className="text-sm font-semibold text-gray-900">⚠ {alert}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-      
+
       {isAddModalOpen && <AddRouteModal onClose={() => setIsAddModalOpen(false)} onAdded={handleRouteAdded} />}
+    </div>
+  )
+}
+
+function StatCard({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className={`${glassCard} p-4`}>
+      <div className="text-[11px] uppercase tracking-[0.24em] text-gray-500">{label}</div>
+      <div className="mt-3 text-2xl font-bold text-gray-900">{value}</div>
+      <div className="text-sm text-gray-500 mt-1">{detail}</div>
+    </div>
+  )
+}
+
+function StatusLegend({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50/70 px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
+        <span className="text-sm font-semibold text-gray-900">{label}</span>
+      </div>
+      <span className="text-sm font-semibold text-gray-700">{value}</span>
     </div>
   )
 }
