@@ -1,8 +1,140 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Fragment, useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet"
+import L from "leaflet"
+import "leaflet/dist/leaflet.css"
+
+// Fix for default Leaflet marker icons in bundlers
+const defaultIcon = L.icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+})
+
+L.Marker.prototype.options.icon = defaultIcon
+
+function createRouteMarkerIcon(color: string) {
+  return L.divIcon({
+    className: "custom-marker",
+    html: `
+      <div style="
+        width: 28px;
+        height: 28px;
+        background: ${color};
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          width: 10px;
+          height: 10px;
+          background: white;
+          border-radius: 50%;
+        "></div>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  })
+}
+
+function MapInvalidator() {
+  const { useMap } = require("react-leaflet")
+  const map = useMap()
+  useEffect(() => {
+    setTimeout(() => map.invalidateSize(), 100)
+  }, [map])
+  return null
+}
+
+const cityCoordinates: Record<string, [number, number]> = {
+  Colombo: [6.9271, 79.8612],
+  Kandy: [7.2906, 80.6337],
+  Galle: [6.0535, 80.2210],
+  Matara: [5.9481, 80.4542],
+  Kurunegala: [7.4860, 80.3640],
+  Jaffna: [9.6615, 80.0255],
+  Negombo: [7.2019, 79.8380],
+  Anuradhapura: [8.3124, 80.4037],
+}
+
+function resolveLocationCoordinates(location: string): [number, number] {
+  const normalized = location.trim()
+  const knownKey = Object.keys(cityCoordinates).find((key) => normalized.toLowerCase().includes(key.toLowerCase()))
+  return knownKey ? cityCoordinates[knownKey] : [7.8731, 80.7718]
+}
+
+interface RouteStop {
+  name: string
+  coords: [number, number]
+}
+
+interface RouteTrack {
+  id: string
+  routeCode?: string
+  startPoint?: string
+  endPoint?: string
+  intermediateStops?: string[]
+  assignedDrivers?: Array<{ fullName: string }>
+  driver?: string
+  vehicle?: string | { registrationNumber?: string }
+  status?: string
+  color: string
+  path: [number, number][]
+  stops: RouteStop[]
+}
+
+function buildRouteTrack(route: any): RouteTrack {
+  const stops: RouteStop[] = [
+    { name: route.startPoint || "Origin", coords: resolveLocationCoordinates(route.startPoint || "") },
+    ...(Array.isArray(route.intermediateStops)
+      ? route.intermediateStops.map((stop: string) => ({ name: stop, coords: resolveLocationCoordinates(stop) }))
+      : []),
+    { name: route.endPoint || "Destination", coords: resolveLocationCoordinates(route.endPoint || "") },
+  ]
+
+  return {
+    ...route,
+    path: stops.map((item) => item.coords),
+    stops,
+    color: route.status === "DELAYED" ? "#f97316" : route.status === "COMPLETED" ? "#3b82f6" : "#10b981",
+  }
+}
+
+const sampleRouteTracks: RouteTrack[] = [
+  {
+    id: "R-102",
+    routeCode: "R-102",
+    driver: "Kasun Fernando",
+    assignedDrivers: [{ fullName: "Kasun Fernando" }],
+    vehicle: "KL-1025",
+    status: "On route",
+    color: "#10b981",
+    path: [
+      [6.9271, 79.8612],
+      [7.2906, 80.6337],
+    ],
+    stops: [
+      { name: "Colombo", coords: [6.9271, 79.8612] },
+      { name: "Kandy", coords: [7.2906, 80.6337] },
+    ],
+  },
+]
+
+const glassCard = "glass-card rounded-2xl"
+const innerCard = "bg-white/80 border border-gray-100 rounded-xl"
+const softCard = "bg-gray-50 border border-gray-100 rounded-xl"
 
 // SVG Icons
 function IconDashboard() {
@@ -112,10 +244,6 @@ function IconNotification() {
   )
 }
 
-const glassCard = "glass-card rounded-2xl"
-const innerCard = "bg-white/80 border border-gray-100 rounded-xl"
-const softCard = "bg-gray-50 border border-gray-100 rounded-xl"
-
 export function RoutesPage() {
   const [routes, setRoutes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -167,11 +295,24 @@ export function RoutesPage() {
 
   const performancePoints = [62, 74, 68, 81, 85, 90, 92]
   const weeklyLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  const distanceBars = [
-    { name: "Route A", value: 120 },
-    { name: "Route B", value: 95 },
-    { name: "Route C", value: 180 },
-  ]
+
+  const routeDistances = filteredRoutes
+    .map((route) => ({
+      name: route.routeCode || `${route.startPoint || "Route"} → ${route.endPoint || ""}`.trim(),
+      value: Number(route.distanceKm || route.distance || 0),
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+
+  const distanceBars = routeDistances.length > 0
+    ? routeDistances.slice(0, 3)
+    : [
+        { name: "Route A", value: 120 },
+        { name: "Route B", value: 95 },
+        { name: "Route C", value: 180 },
+      ]
+
+  const maxDistance = Math.max(...distanceBars.map((item) => item.value), 1)
   const schedules = [
     { time: "08:00 AM", route: "Colombo → Kandy" },
     { time: "09:30 AM", route: "Galle → Matara" },
@@ -283,22 +424,106 @@ export function RoutesPage() {
           </div>
         </div>
 
+        <div className={`${glassCard} p-5 mt-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-sky-600 font-semibold">Live Route Map</div>
+              <h2 className="text-xl font-semibold text-gray-900 mt-2">Track assigned routes and vehicle progress</h2>
+            </div>
+            <span className="text-xs text-gray-500">Interactive traffic view</span>
+          </div>
+          <div className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
+            <div className="rounded-[28px] overflow-hidden border border-gray-200">
+              <MapContainer center={[7.4, 80.5]} zoom={7} style={{ minHeight: 360, width: "100%" }} zoomControl={false}>
+                <MapInvalidator />
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {(
+                  selectedRoute
+                    ? [buildRouteTrack(selectedRoute)]
+                    : filteredRoutes.length > 0
+                      ? filteredRoutes.slice(0, 2).map(buildRouteTrack)
+                      : sampleRouteTracks
+                ).map((route) => (
+                  <Fragment key={route.id}>
+                    <Polyline
+                      key={`${route.id}-line`}
+                      pathOptions={{ color: route.color, weight: 5, opacity: 0.8 }}
+                      positions={route.path as [number, number][]}
+                    />
+                    {route.stops.map((stop) => (
+                      <Marker key={`${route.id}-${stop.name}`} position={stop.coords} icon={createRouteMarkerIcon(route.color)}>
+                        <Popup>
+                          <div className="text-sm">
+                            <strong>{route.routeCode || route.id}</strong>
+                            <div>{stop.name}</div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </Fragment>
+                ))}
+              </MapContainer>
+            </div>
+            <div className="grid gap-3">
+              {(
+                selectedRoute
+                  ? [buildRouteTrack(selectedRoute)]
+                  : filteredRoutes.length > 0
+                    ? filteredRoutes.slice(0, 2).map(buildRouteTrack)
+                    : sampleRouteTracks
+              ).map((route) => (
+                <div key={route.id} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">{route.routeCode || route.id}</div>
+                      <div className="text-xs text-gray-500">Driver: {route.driver || route.assignedDrivers?.[0]?.fullName || "Unassigned"}</div>
+                    </div>
+                    <span className="text-[11px] font-semibold uppercase text-gray-500">{route.status || (route.status === "DELAYED" ? "Delayed" : "Active")}</span>
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div><span className="font-semibold text-gray-900">Vehicle:</span> {typeof route.vehicle === "string" ? route.vehicle : route.vehicle?.registrationNumber || "Pending"}</div>
+                    <div><span className="font-semibold text-gray-900">Origin:</span> {route.stops[0].name}</div>
+                    <div><span className="font-semibold text-gray-900">Destination:</span> {route.stops[route.stops.length - 1].name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] mt-5">
           <div className={`${glassCard} p-5`}>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-600 font-semibold">Distance Covered</div>
                 <h2 className="text-xl font-semibold text-gray-900 mt-2">Route utilization comparison</h2>
+                <p className="text-sm text-gray-500 mt-1">Top assigned routes ranked by distance covered.</p>
               </div>
-              <span className="text-xs text-gray-500">KM covered</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Top routes: {distanceBars.length}</div>
+                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Avg distance {Math.round(distanceBars.reduce((sum, item) => sum + item.value, 0) / Math.max(distanceBars.length, 1))} km</div>
+              </div>
             </div>
-            <div className="flex items-end gap-4 h-48">
-              {distanceBars.map((item) => (
-                <div key={item.name} className="flex-1 flex flex-col items-center gap-2">
-                  <div className="w-full rounded-t-2xl bg-gradient-to-t from-blue-600 to-orange-400" style={{ height: `${Math.max(20, (item.value / 200) * 100)}%` }} />
-                  <div className="text-center">
-                    <div className="text-sm font-semibold text-gray-900">{item.value} km</div>
-                    <div className="text-[11px] text-gray-500">{item.name}</div>
+            <div className="space-y-4">
+              {distanceBars.map((item, index) => (
+                <div key={item.name} className="rounded-3xl border border-gray-200 bg-white/90 p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">{item.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">Distance: {item.value} km</div>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${index === 0 ? "bg-emerald-100 text-emerald-800" : index === 1 ? "bg-sky-100 text-sky-800" : "bg-orange-100 text-orange-800"}`}>
+                      #{index + 1}
+                    </span>
+                  </div>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-400"
+                      style={{ width: `${Math.max(24, Math.min(100, (item.value / maxDistance) * 100))}%` }}
+                    />
                   </div>
                 </div>
               ))}
