@@ -113,23 +113,33 @@ export function VehiclesPage() {
             const assignedDriver = v.drivers && v.drivers.length > 0 ? v.drivers[0].fullName : "—";
             const routeName = v.drivers && v.drivers.length > 0 && v.drivers[0].assignedRouteId ? "Assigned via Driver" : "Unassigned"; 
             
+            // Calculate dynamic values
+            const totalTrips = v.trips?.length || 0;
+            const totalRevenue = v.trips?.reduce((sum: number, t: any) => sum + (t.revenue || 0), 0) || 0;
+            const totalPassengers = v.trips?.reduce((sum: number, t: any) => sum + (t.passengers || 0), 0) || 0;
+            
+            // Avg fuel consumption from fuel records
+            const avgFuelConsumption = v.fuelRecords?.length > 0 
+              ? (v.fuelRecords.reduce((sum: number, f: any) => sum + (f.liters || 0), 0) / v.fuelRecords.length).toFixed(1)
+              : v.fuelUsageAvg || 0;
+
             return {
               id: v.registrationNumber,
               dbId: v.id,
               type: `${v.make} ${v.model}`,
               capacity: v.capacity || 40,
               route: routeName,
-              depot: "—",
+              depot: "—", // Missing from schema, left as unassigned
               status: v.status === "IN_USE" ? "active" : v.status === "MAINTENANCE" ? "maintenance" : v.status === "RETIRED" ? "retired" : "idle",
               driver: assignedDriver,
-              conductor: "—",
-              shift: "—",
+              conductor: "—", // Missing from schema
+              shift: "—", // Missing from schema
               km: v.mileageKm || 0,
-              fuel: v.fuelUsageAvg || 0,
-              revenue: "Rs 0", // Mock
-              trips: 0, // Mock
-              onTime: "—", // Mock
-              passengers: 0, // Mock
+              fuel: Number(avgFuelConsumption),
+              revenue: `Rs ${totalRevenue.toLocaleString()}`,
+              trips: totalTrips,
+              onTime: "100%", // Requires more complex tracking logic
+              passengers: totalPassengers,
               ac: v.features?.includes("AC") || false,
               cctv: v.features?.includes("CCTV") || false,
               gps: v.features?.includes("GPS") || false,
@@ -163,6 +173,29 @@ export function VehiclesPage() {
     fetchVehicles()
   }, [])
 
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [activeVehicle, setActiveVehicle] = useState<any>(null)
+
+  const handleDelete = async (id: string, dbId: string) => {
+    if (window.confirm(`Are you sure you want to delete vehicle ${id}?`)) {
+      try {
+        const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+        const res = await fetch(`/api/vehicles/${dbId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          setBuses(prev => prev.filter(b => b.dbId !== dbId))
+        } else {
+          alert("Failed to delete vehicle. You may not have sufficient permissions.")
+        }
+      } catch (err) {
+        console.error("Delete failed", err)
+      }
+    }
+  }
+
   const baseFiltered = activeFilter === "All" ? buses : buses.filter(b => statusLabels[b.status] === activeFilter)
   const filtered = baseFiltered.filter(b => b.id.toLowerCase().includes(searchText.toLowerCase()) || b.route.toLowerCase().includes(searchText.toLowerCase()))
   const selected = buses.find(b => b.id === selectedBus)
@@ -170,8 +203,8 @@ export function VehiclesPage() {
   const totalBuses = buses.length
   const activeBuses = buses.filter(b => b.status === "active").length
   const maintBuses = buses.filter(b => b.status === "maintenance").length
-  const avgUtil = Math.round(buses.filter(b => b.status === "active").reduce((s, b) => s + (b.passengers / 60) * 100, 0) / activeBuses)
-  const avgFuel = Math.round(buses.filter(b => b.status === "active").reduce((s, b) => s + b.fuel, 0) / activeBuses)
+  const avgUtil = activeBuses > 0 ? Math.round(buses.filter(b => b.status === "active").reduce((s, b) => s + (b.passengers / 60) * 100, 0) / activeBuses) : 0
+  const avgFuel = activeBuses > 0 ? Math.round(buses.filter(b => b.status === "active").reduce((s, b) => s + b.fuel, 0) / activeBuses) : 0
 
   return (
     <div className="relative">
@@ -305,6 +338,8 @@ export function VehiclesPage() {
                 </tbody>
               </table>
             </div>
+
+
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -328,6 +363,37 @@ export function VehiclesPage() {
           </div>
         </div>
       </div>
+
+      {/* View Modal */}
+      {isViewModalOpen && activeVehicle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
+              <h2 className="text-sm font-bold text-gray-900">Vehicle Details: {activeVehicle.id}</h2>
+              <button onClick={() => setIsViewModalOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto thin-scrollbar p-5 bg-gray-50/50">
+              <BusDetailPanel bus={activeVehicle} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && activeVehicle && (
+        <EditVehicleModal 
+          bus={activeVehicle} 
+          onClose={() => setIsEditModalOpen(false)} 
+          onSuccess={(updatedBus) => {
+            setBuses(prev => prev.map(b => b.dbId === updatedBus.dbId ? { ...b, ...updatedBus } : b))
+            setIsEditModalOpen(false)
+          }} 
+        />
+      )}
+
+    </div>
     </div>
   </div>
   )
@@ -572,4 +638,93 @@ function IconChart({ className }: { className?: string }) { return <svg width="2
 function IconSearch({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> }
 function IconNotification({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> }
 
+function EditVehicleModal({ bus, onClose, onSuccess }: { bus: any, onClose: () => void, onSuccess: (updatedBus: any) => void }) {
+  const [formData, setFormData] = useState({
+    status: bus.status === 'active' ? 'IN_USE' : bus.status === 'maintenance' ? 'MAINTENANCE' : bus.status === 'retired' ? 'RETIRED' : 'IDLE',
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+    
+    try {
+      const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+      const res = await fetch(`/api/vehicles/${bus.dbId}`, {
+        method: "PATCH",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const mappedBus = {
+          ...bus,
+          status: data.status === "IN_USE" ? "active" : data.status === "MAINTENANCE" ? "maintenance" : data.status === "RETIRED" ? "retired" : "idle",
+        }
+        onSuccess(mappedBus)
+      } else {
+        const errData = await res.json()
+        setError(errData.message || "Failed to update vehicle")
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+          <h2 className="text-base font-bold text-gray-900">Edit Vehicle: {bus.id}</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div className="p-5">
+          {error && <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm border border-red-100">{error}</div>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-1.5">Vehicle Status</label>
+              <select 
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              >
+                <option value="IDLE">Idle</option>
+                <option value="IN_USE">Active / In Use</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="RETIRED">Retired</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1.5">Note: More fields can be added to this form based on API schema.</p>
+            </div>
+            
+            <div className="pt-4 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}

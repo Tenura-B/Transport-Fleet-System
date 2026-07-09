@@ -22,6 +22,7 @@ export class RoutesService {
     return this.prisma.client.route.findMany({
       include: {
         assignedDrivers: true,
+        trips: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -34,6 +35,7 @@ export class RoutesService {
       where: { id },
       include: {
         assignedDrivers: true,
+        trips: true,
       },
     });
     if (!route) {

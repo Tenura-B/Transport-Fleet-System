@@ -251,17 +251,23 @@ export function RoutesPage() {
   const searchQuery = searchParams.get("search") || ""
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedRoute, setSelectedRoute] = useState<any | null>(null)
+  const [alerts, setAlerts] = useState<any[]>([])
 
   const fetchRoutes = async () => {
     try {
       const token = document.cookie.split("; ").find((row) => row.startsWith("access_token="))?.split("=")[1]
-      const res = await fetch("/api/routes", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const [resRoutes, resAlerts] = await Promise.all([
+        fetch("/api/routes", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/alerts", { headers: { Authorization: `Bearer ${token}` } })
+      ])
+      
+      if (resRoutes.ok) {
+        const data = await resRoutes.json()
         setRoutes(data)
         if (data.length > 0 && !selectedRoute) setSelectedRoute(data[0])
+      }
+      if (resAlerts.ok) {
+        setAlerts(await resAlerts.json())
       }
     } catch (e) {
       console.error(e)
@@ -313,6 +319,20 @@ export function RoutesPage() {
       ]
 
   const maxDistance = Math.max(...distanceBars.map((item) => item.value), 1)
+
+  const schedules = routes.flatMap(r => r.trips || []).slice(0, 4).map(t => ({
+    time: new Date(t.scheduledDeparture).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    route: `${t.route?.startPoint || 'Unknown'} → ${t.route?.endPoint || 'Unknown'}`
+  }))
+  
+  const analytics = [
+    { label: "Average travel time", value: "42 min", detail: "Below target by 6 min" },
+    { label: "Average delays", value: "11 min", detail: "Improved from last week" },
+    { label: "Route efficiency", value: "91%", detail: "Above regional benchmark" },
+  ]
+  const recentAlerts = alerts.slice(0, 4).map(a => a.message)
+
+=======
   const schedules = [
     { time: "08:00 AM", route: "Colombo → Kandy" },
     { time: "09:30 AM", route: "Galle → Matara" },
@@ -331,6 +351,7 @@ export function RoutesPage() {
     "Vehicle maintenance affecting scheduled route.",
     "Route exceeds expected travel time.",
   ]
+
 
   const handleRouteAdded = () => {
     fetchRoutes()
@@ -544,7 +565,20 @@ export function RoutesPage() {
                     <div className="text-sm font-semibold text-gray-900">{item.time}</div>
                     <div className="text-xs text-gray-500 mt-1">{item.route}</div>
                   </div>
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-red-600 font-semibold">Alerts</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Operational warnings</h2>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {recentAlerts.map((alert, idx) => (
+                <div key={alert} className="rounded-2xl border border-red-100 bg-red-50/70 px-3 py-3">
+                  <div className="text-sm font-semibold text-gray-900">⚠ {alert}</div>
+
                   <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">On time</span>
+
                 </div>
               ))}
             </div>

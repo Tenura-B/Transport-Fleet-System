@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,56 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+
+  const [testimonials, setTestimonials] = useState<any[]>([])
+  const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0)
+
+  useEffect(() => {
+    fetch("/api/testimonials/public")
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`API returned ${res.status}`);
+        }
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch (err) {
+          throw new Error("Invalid JSON from API");
+        }
+      })
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setTestimonials(data)
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    if (testimonials.length <= 1) return;
+    const intervalId = setInterval(() => {
+      setCurrentTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(intervalId);
+  }, [testimonials.length]);
+
+  const nextTestimonial = () => {
+    if (testimonials.length <= 1) return;
+    setCurrentTestimonialIndex((prev) => (prev + 1) % testimonials.length)
+  }
+
+  const prevTestimonial = () => {
+    if (testimonials.length <= 1) return;
+    setCurrentTestimonialIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  }
+
+  const currentTestimonial = testimonials.length > 0 ? testimonials[currentTestimonialIndex] : {
+    authorName: "John Anderson",
+    authorRole: "Fleet Manager at Logistics Pro",
+    content: "Managing our fleet has never been easier. The dashboard gives us complete visibility and control over all our vehicles and drivers.",
+    rating: 5
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -146,9 +196,9 @@ export default function LoginPage() {
           {/* Right: Testimonial Section */}
           <div className="hidden lg:block bg-gradient-to-br from-black/80 to-black/60 p-16 relative overflow-hidden">
             {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-orange-500/20 to-rose-500/20 rounded-bl-full" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-orange-500/20 to-rose-500/20 rounded-bl-full animate-pulse" />
             <div className="absolute bottom-20 right-20">
-              <svg className="w-64 h-64 text-purple-500/40" viewBox="0 0 200 200">
+              <svg className="w-64 h-64 text-purple-500/40 animate-[spin_20s_linear_infinite]" viewBox="0 0 200 200">
                 <polygon points="100,10 40,198 190,78 10,78 160,198" fill="currentColor" />
               </svg>
             </div>
@@ -158,27 +208,37 @@ export default function LoginPage() {
                 What's our <br /> Fleet Managers Said.
               </h2>
 
-              <div className="mb-8">
-                <svg className="w-10 h-10 text-orange-400 mb-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-                </svg>
-                <p className="text-white/80 text-lg leading-relaxed mb-6">
-                  "Managing our fleet has never been easier. The dashboard gives us complete visibility and control over all our vehicles and drivers."
-                </p>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-white font-semibold text-lg mb-1">John Anderson</h3>
-                <p className="text-white/60">Fleet Manager at Logistics Pro</p>
+              <div className="overflow-hidden w-full relative mb-8">
+                <div 
+                  className="flex transition-transform duration-500 ease-in-out" 
+                  style={{ transform: `translateX(-${currentTestimonialIndex * 100}%)` }}
+                >
+                  {(testimonials.length > 0 ? testimonials : [currentTestimonial]).map((t, idx) => (
+                    <div key={t.id || idx} className="w-full flex-none flex flex-col pr-8">
+                      <div className="h-[140px]">
+                        <svg className="w-10 h-10 text-orange-400 mb-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                        </svg>
+                        <p className="text-white/80 text-lg leading-relaxed line-clamp-3">
+                          "{t.content}"
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold text-lg mb-1">{t.authorName}</h3>
+                        <p className="text-white/60">{t.authorRole}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-3">
-                <button className="w-12 h-12 rounded-lg bg-gradient-to-r from-orange-400 to-rose-400 flex items-center justify-center hover:opacity-90 transition-opacity">
+                <button type="button" onClick={prevTestimonial} className="w-12 h-12 rounded-lg bg-gradient-to-r from-orange-400 to-rose-400 flex items-center justify-center hover:opacity-90 transition-opacity">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <button className="w-12 h-12 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
+                <button type="button" onClick={nextTestimonial} className="w-12 h-12 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -187,7 +247,7 @@ export default function LoginPage() {
             </div>
 
             {/* Bottom Card */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white rounded-3xl p-6 w-[400px] shadow-2xl">
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white rounded-3xl p-6 w-[400px] shadow-2xl hover:-translate-y-2 transition-transform duration-500">
               <h3 className="text-black font-semibold text-lg mb-3">Get your fleet managed right now</h3>
               <p className="text-gray-600 text-sm mb-4">
                 Join thousands of fleet managers who trust our system to run their business efficiently.

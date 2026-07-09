@@ -78,6 +78,10 @@ export class DriversService {
     return this.prisma.client.driver.update({
       where: { id },
       data,
+      include: {
+        assignedVehicle: true,
+        assignedRoute: true,
+      },
     });
   }
 
