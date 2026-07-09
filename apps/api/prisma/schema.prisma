@@ -35,6 +35,10 @@ model Company {
   vehicles  Vehicle[]
   drivers   Driver[]
   routes    Route[]
+  trips     Trip[]
+  fuelRecords FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
+  alerts    Alert[]
   createdAt DateTime  @default(now())
 }
 
@@ -70,6 +74,9 @@ model Vehicle {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   drivers            Driver[]
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   companyId          String
   company            Company       @relation(fields: [companyId], references: [id])
@@ -125,6 +132,7 @@ model Driver {
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  trips             Trip[]
 
   companyId         String
   company           Company  @relation(fields: [companyId], references: [id])
@@ -160,6 +168,7 @@ model Route {
   
   // Relations
   assignedDrivers       Driver[]
+  trips                 Trip[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,3 +185,116 @@ enum DriverStatus {
   SUSPENDED
   INACTIVE
 }
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  authorName  String
+  authorRole  String
+  content     String
+  rating      Int      @default(5)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  CANCELLED
+}
+
+model Trip {
+  id                 String     @id @default(cuid())
+  
+  routeId            String
+  route              Route      @relation(fields: [routeId], references: [id])
+  
+  vehicleId          String
+  vehicle            Vehicle    @relation(fields: [vehicleId], references: [id])
+  
+  driverId           String
+  driver             Driver     @relation(fields: [driverId], references: [id])
+  
+  scheduledDeparture DateTime
+  actualDeparture    DateTime?
+  scheduledArrival   DateTime
+  actualArrival      DateTime?
+  
+  status             TripStatus @default(SCHEDULED)
+  progressPercent    Int        @default(0)
+  
+  passengers         Int        @default(0)
+  revenue            Float      @default(0)
+  
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  companyId          String
+  company            Company    @relation(fields: [companyId], references: [id])
+}
+
+model FuelRecord {
+  id          String   @id @default(cuid())
+  
+  vehicleId   String
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  
+  date        DateTime
+  liters      Float
+  cost        Float
+  mileageAtFill Float
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model MaintenanceRecord {
+  id            String            @id @default(cuid())
+  
+  vehicleId     String
+  vehicle       Vehicle           @relation(fields: [vehicleId], references: [id])
+  
+  type          String            // e.g. "brake inspection", "oil service"
+  description   String?
+  dateScheduled DateTime
+  dateCompleted DateTime?
+  status        MaintenanceStatus @default(SCHEDULED)
+  cost          Float             @default(0)
+  
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  companyId     String
+  company       Company           @relation(fields: [companyId], references: [id])
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model Alert {
+  id        String        @id @default(cuid())
+  title     String
+  message   String
+  severity  AlertSeverity @default(INFO)
+  isRead    Boolean       @default(false)
+  
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  companyId String
+  company   Company       @relation(fields: [companyId], references: [id])
+}

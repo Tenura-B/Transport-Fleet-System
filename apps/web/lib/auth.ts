@@ -1,7 +1,7 @@
 export type AuthUser = {
   id: string;
   email: string;
-  role: "ADMIN" | "MANAGER" | "DRIVER";
+  role: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "DRIVER";
   createdAt: string;
   company: {
     id: string;
@@ -29,7 +29,7 @@ export function setToken(token: string) {
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
-  document.cookie = "access_token=; path=/; max-age=0";
+  document.cookie = "access_token=; path=/; max-age=0; SameSite=Lax";
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {

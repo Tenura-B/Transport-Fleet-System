@@ -72,7 +72,7 @@ export function DashboardHeader() {
 
   const handleLogout = () => {
     logout()
-    router.push("/login")
+    window.location.href = "/login"
   }
 
   return (

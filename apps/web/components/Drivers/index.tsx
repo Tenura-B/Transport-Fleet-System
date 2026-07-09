@@ -33,6 +33,8 @@ export function DriversPage() {
   const [activeFilter, setActiveFilter] = useState("All")
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
+  const [activeDriver, setActiveDriver] = useState<any>(null)
   
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get("search") || ""
@@ -82,8 +84,24 @@ export function DriversPage() {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
           <div>
+<<<<<<< Updated upstream
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Drivers</h1>
             <p className="text-gray-500 text-sm mt-1">Manage driver credentials and assignments</p>
+=======
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Drivers Dashboard</h1>
+            <p className="text-gray-500 text-sm mt-1">Monitor availability, performance, and compliance across your driver pool.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setIsAddModalOpen(true)} className="bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-colors">
+              Add Driver
+            </button>
+            <button onClick={() => { setActiveDriver(null); setIsAssignModalOpen(true); }} className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+              Assign Vehicle
+            </button>
+            <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+              Export Report
+            </button>
+>>>>>>> Stashed changes
           </div>
           <button onClick={() => setIsAddModalOpen(true)} className="bg-[#1a1a1a] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
             + Register Driver
@@ -159,12 +177,125 @@ export function DriversPage() {
                   <p className="text-gray-500 text-sm">Select a driver to view details</p>
                 </div>
               </div>
+<<<<<<< Updated upstream
             )}
+=======
+            </div>
+            <div className="space-y-3">
+              <ActivityItem title="John Silva completed Route 25" detail="12 mins ago" />
+              <ActivityItem title="Kasun assigned to Vehicle V102" detail="35 mins ago" />
+              <ActivityItem title="Nimal requested leave" detail="1 hour ago" />
+              <ActivityItem title="Driver license renewed" detail="2 hours ago" />
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-red-600 font-semibold">Alerts</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Critical information</h2>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <AlertItem title="License expires in 10 days" detail="3 drivers need renewal" />
+              <AlertItem title="Driver unavailable for assignment" detail="2 drivers marked unavailable" />
+              <AlertItem title="Medical certificate expired" detail="1 compliance action needed" />
+              <AlertItem title="Excess working hours detected" detail="Review shift plan for 2 drivers" />
+            </div>
+          </div>
+        </div>
+
+        <div className={`${glassCard} p-5`}>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-gray-500 font-semibold">Driver Table</div>
+              <h2 className="text-xl font-semibold text-gray-900 mt-2">Fleet driver roster</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filters.map(f => (
+                <button
+                  key={f}
+                  onClick={() => { setActiveFilter(f); setSelectedDriver(null) }}
+                  className={`px-3 py-2 rounded-full text-xs font-semibold transition-all ${
+                    activeFilter === f ? "bg-[#1a1a1a] text-white shadow-sm" : "text-gray-600 bg-white border border-gray-200 hover:border-orange-300"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-2 text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-[0.24em] text-gray-400">
+                  <th className="px-3 py-2">Driver ID</th>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Vehicle</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Phone</th>
+                  <th className="px-3 py-2">License Expiry</th>
+                  <th className="px-3 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-gray-500">Loading drivers...</td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><td colSpan={7} className="px-3 py-6 text-center text-gray-500">No drivers match your current filters.</td></tr>
+                ) : (
+                  filtered.map(driver => (
+                    <tr key={driver.id} className="bg-gray-50/70">
+                      <td className="px-3 py-3 font-semibold text-gray-900">{driver.id}</td>
+                      <td className="px-3 py-3">
+                        <div className="font-semibold text-gray-900">{driver.fullName}</div>
+                        <div className="text-xs text-gray-500">{driver.email}</div>
+                      </td>
+                      <td className="px-3 py-3 text-gray-600">{driver.assignedVehicle?.registrationNumber || "—"}</td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusTones[driver.status]}`}>
+                          {statusLabels[driver.status]}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-gray-600">{driver.contactNumber}</td>
+                      <td className="px-3 py-3 text-gray-600">{new Date(driver.licenseExpiry).toLocaleDateString()}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">View</button>
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">Edit</button>
+                          <button 
+                            onClick={() => { setActiveDriver(driver); setIsAssignModalOpen(true); }}
+                            className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300"
+                          >
+                            Assign
+                          </button>
+                          <button className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700">Suspend</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+>>>>>>> Stashed changes
           </div>
         </div>
       </div>
       
       <AddDriverModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} vehicles={vehicles} routes={routes} />
+      <AssignDriverModal 
+        isOpen={isAssignModalOpen} 
+        onClose={() => setIsAssignModalOpen(false)} 
+        driver={activeDriver} 
+        drivers={drivers}
+        vehicles={vehicles.filter(v => v.status === "AVAILABLE" || v.status === "IN_USE" || v.status === "active" || v.status === "idle")} 
+        routes={routes} 
+        onSuccess={(updated) => {
+          setDrivers(prev => prev.map(d => d.id === updated.id ? { ...d, ...updated } : d))
+          setIsAssignModalOpen(false)
+        }} 
+      />
     </div>
   )
 }
@@ -335,7 +466,7 @@ function AddDriverModal({ isOpen, onClose, vehicles, routes }: { isOpen: boolean
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 rounded-md bg-orange-500 flex items-center justify-center">
-              <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" width="12" height="12"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             </div>
             <h2 className="text-sm font-bold text-gray-900">Register New Driver</h2>
           </div>
@@ -510,5 +641,142 @@ function IconSearch({ className }: { className?: string }) { return <svg width="
 function IconNotification({ className }: { className?: string }) { return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> }
 
 
+function AssignDriverModal({ isOpen, onClose, driver, drivers, vehicles, routes, onSuccess }: { isOpen: boolean; onClose: () => void; driver?: any; drivers: any[]; vehicles: any[]; routes: any[]; onSuccess: (updated: any) => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [selectedDriverId, setSelectedDriverId] = useState("");
+  const [assignedVehicleId, setAssignedVehicleId] = useState("");
+  const [assignedRouteId, setAssignedRouteId] = useState("");
 
+  // Update form when driver changes (e.g. modal opens with a specific driver)
+  useEffect(() => {
+    if (driver) {
+      setSelectedDriverId(driver.id);
+      setAssignedVehicleId(driver.assignedVehicleId || "");
+      setAssignedRouteId(driver.assignedRouteId || "");
+    } else {
+      setSelectedDriverId("");
+      setAssignedVehicleId("");
+      setAssignedRouteId("");
+    }
+  }, [driver, isOpen]);
 
+  // Update vehicle/route when a different driver is selected in the dropdown
+  useEffect(() => {
+    if (!driver && selectedDriverId) {
+      const d = drivers.find(d => d.id === selectedDriverId);
+      if (d) {
+        setAssignedVehicleId(d.assignedVehicleId || "");
+        setAssignedRouteId(d.assignedRouteId || "");
+      }
+    }
+  }, [selectedDriverId, driver, drivers]);
+
+  if (!isOpen) return null;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedDriverId) {
+      setError("Please select a driver.");
+      return;
+    }
+    
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+      const res = await fetch(`/api/drivers/${selectedDriverId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assignedVehicleId: assignedVehicleId || null, assignedRouteId: assignedRouteId || null })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to assign driver");
+      }
+
+      const updatedDriver = await res.json();
+      onSuccess(updatedDriver);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-base font-bold text-gray-900">{driver ? `Assign Driver: ${driver.fullName}` : "Assign Vehicle to Driver"}</h2>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-5">
+          {error && <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm border border-red-100">{error}</div>}
+          
+          <div className="space-y-4">
+            {!driver && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Select Driver <span className="text-red-400">*</span></label>
+                <select 
+                  required
+                  value={selectedDriverId}
+                  onChange={(e) => setSelectedDriverId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="">Select a driver...</option>
+                  {drivers.map(d => (
+                    <option key={d.id} value={d.id}>{d.fullName} ({d.status})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-1.5">Vehicle</label>
+              <select 
+                value={assignedVehicleId}
+                onChange={(e) => setAssignedVehicleId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="">None (Unassigned)</option>
+                {vehicles.map(v => (
+                  <option key={v.id} value={v.id}>{v.registrationNumber} - {v.make} {v.model}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-1.5">Route</label>
+              <select 
+                value={assignedRouteId}
+                onChange={(e) => setAssignedRouteId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="">None (Unassigned)</option>
+                {routes.map(r => (
+                  <option key={r.id} value={r.id}>{r.routeCode} - {r.startPoint} to {r.endPoint}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          <div className="pt-6 flex justify-end gap-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-semibold text-white bg-[#1a1a1a] rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center gap-2">
+              {loading && <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+              {loading ? "Saving..." : "Save Assignment"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

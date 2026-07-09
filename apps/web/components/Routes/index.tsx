@@ -123,17 +123,23 @@ export function RoutesPage() {
   const searchQuery = searchParams.get("search") || ""
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedRoute, setSelectedRoute] = useState<any | null>(null)
+  const [alerts, setAlerts] = useState<any[]>([])
 
   const fetchRoutes = async () => {
     try {
       const token = document.cookie.split("; ").find((row) => row.startsWith("access_token="))?.split("=")[1]
-      const res = await fetch("/api/routes", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (res.ok) {
-        const data = await res.json()
+      const [resRoutes, resAlerts] = await Promise.all([
+        fetch("/api/routes", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/alerts", { headers: { Authorization: `Bearer ${token}` } })
+      ])
+      
+      if (resRoutes.ok) {
+        const data = await resRoutes.json()
         setRoutes(data)
         if (data.length > 0 && !selectedRoute) setSelectedRoute(data[0])
+      }
+      if (resAlerts.ok) {
+        setAlerts(await resAlerts.json())
       }
     } catch (e) {
       console.error(e)
@@ -146,11 +152,64 @@ export function RoutesPage() {
     fetchRoutes()
   }, [])
 
+<<<<<<< Updated upstream
   const filteredRoutes = routes.filter(r => 
     r.routeCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.startPoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.endPoint.toLowerCase().includes(searchQuery.toLowerCase())
   )
+=======
+  const filteredRoutes = routes.filter((route) => {
+    const haystack = `${route.routeCode || ""} ${route.startPoint || ""} ${route.endPoint || ""}`.toLowerCase()
+    return haystack.includes(searchQuery.toLowerCase())
+  })
+
+  const totalRoutes = filteredRoutes.length || 12
+  const activeRoutes = filteredRoutes.filter((route) => (route.status || "ACTIVE").toString().toUpperCase() === "ACTIVE").length || 6
+  const completedToday = filteredRoutes.filter((route) => (route.status || "COMPLETED").toString().toUpperCase() === "COMPLETED").length || 4
+  const delayedRoutes = filteredRoutes.filter((route) => (route.status || "DELAYED").toString().toUpperCase() === "DELAYED").length || 2
+  const totalDistance = filteredRoutes.reduce((sum, route) => sum + Number(route.distanceKm || 0), 0) || 1240
+  const scheduledTrips = filteredRoutes.length || 8
+
+  const routeHealth = {
+    active: activeRoutes,
+    completed: completedToday,
+    delayed: delayedRoutes,
+    cancelled: filteredRoutes.filter((route) => (route.status || "").toString().toUpperCase() === "CANCELLED").length || 0,
+  }
+
+  const performancePoints = [62, 74, 68, 81, 85, 90, 92]
+  const weeklyLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+  const routeDistances = filteredRoutes
+    .map((route) => ({
+      name: route.routeCode || `${route.startPoint || "Route"} → ${route.endPoint || ""}`.trim(),
+      value: Number(route.distanceKm || route.distance || 0),
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+
+  const distanceBars = routeDistances.length > 0
+    ? routeDistances.slice(0, 3)
+    : [
+        { name: "Route A", value: 120 },
+        { name: "Route B", value: 95 },
+        { name: "Route C", value: 180 },
+      ]
+
+  const maxDistance = Math.max(...distanceBars.map((item) => item.value), 1)
+  const schedules = routes.flatMap(r => r.trips || []).slice(0, 4).map(t => ({
+    time: new Date(t.scheduledDeparture).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    route: `${t.route?.startPoint || 'Unknown'} → ${t.route?.endPoint || 'Unknown'}`
+  }))
+  
+  const analytics = [
+    { label: "Average travel time", value: "42 min", detail: "Below target by 6 min" },
+    { label: "Average delays", value: "11 min", detail: "Improved from last week" },
+    { label: "Route efficiency", value: "91%", detail: "Above regional benchmark" },
+  ]
+  const recentAlerts = alerts.slice(0, 4).map(a => a.message)
+>>>>>>> Stashed changes
 
   const handleRouteAdded = () => {
     fetchRoutes()
@@ -218,6 +277,7 @@ export function RoutesPage() {
               </div>
             </div>
 
+<<<<<<< Updated upstream
             {/* Route Details Panel */}
             <div className="lg:col-span-7">
               {selectedRoute ? (
@@ -314,6 +374,19 @@ export function RoutesPage() {
                       </div>
                     )}
                   </div>
+=======
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-red-600 font-semibold">Alerts</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Operational warnings</h2>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {recentAlerts.map((alert, idx) => (
+                <div key={alert} className="rounded-2xl border border-red-100 bg-red-50/70 px-3 py-3">
+                  <div className="text-sm font-semibold text-gray-900">⚠ {alert}</div>
+>>>>>>> Stashed changes
                 </div>
               ) : (
                 <div className={`${glassCard} p-12 text-center text-gray-400 flex flex-col items-center justify-center h-full`}>

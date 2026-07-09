@@ -53,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {[
             { name: "Companies", path: "/admin/companies", icon: "🏢" },
             { name: "Global Users", path: "/admin/users", icon: "👥" },
+            { name: "Testimonials", path: "/admin/testimonials", icon: "💬" },
             { name: "Settings", path: "/admin/settings", icon: "⚙️" },
           ].map((item) => {
             const isActive = pathname.startsWith(item.path)

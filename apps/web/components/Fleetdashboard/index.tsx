@@ -1,5 +1,9 @@
+<<<<<<< Updated upstream
 import React from "react"
 import Link from "next/link"
+=======
+import React, { useEffect, useState } from "react"
+>>>>>>> Stashed changes
 import { SriLankaMap } from "./SriLankaMap"
 
 const glassCard = "glass-card rounded-2xl"
@@ -7,21 +11,40 @@ const softCard = "soft-card rounded-xl"
 const innerCard = "soft-card rounded-lg"
 
 export function FleetDashboard() {
+  const [stats, setStats] = useState<any>(null)
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+        const res = await fetch("/api/dashboard/stats", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          setStats(await res.json())
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchStats()
+  }, [])
   return (
     <div className="space-y-5">
       <DashboardTitle />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-5 flex">
           <div className="w-full flex flex-col">
-            <KPICards />
+            <KPICards stats={stats} />
           </div>
         </div>
         <div className="lg:col-span-7 flex">
           <div className="w-full flex flex-col">
-            <FleetCoverageCard />
+            <FleetCoverageCard stats={stats} />
           </div>
         </div>
       </div>
+<<<<<<< Updated upstream
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-5 space-y-5">
           <AlertsFeed />
@@ -37,6 +60,12 @@ export function FleetDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <TripStatusPanel />
         <RevenueSummaryCard />
+=======
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <FleetStatusPie stats={stats} />
+        <FuelBreakdownPie />
+        <TripStatusPanel stats={stats} />
+>>>>>>> Stashed changes
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <MaintenanceSchedule />
@@ -65,14 +94,14 @@ function DashboardTitle() {
   )
 }
 
-function KPICards() {
+function KPICards({ stats }: { stats: any }) {
   const kpis = [
     {
       icon: <IconTruck />,
       iconBg: "bg-blue-50",
       iconColor: "text-blue-600",
       label: "Total Vehicles",
-      value: "1,284",
+      value: stats?.vehicles?.total || "1,284",
       change: "+12%",
       positive: true,
     },
@@ -81,7 +110,7 @@ function KPICards() {
       iconBg: "bg-green-50",
       iconColor: "text-green-600",
       label: "Active Drivers",
-      value: "856",
+      value: stats?.drivers?.active || "856",
       change: "+8%",
       positive: true,
     },
@@ -89,8 +118,8 @@ function KPICards() {
       icon: <IconRoute />,
       iconBg: "bg-orange-50",
       iconColor: "text-orange-600",
-      label: "Trips Completed",
-      value: "18,640",
+      label: "Active Routes",
+      value: stats?.routes?.total || "156",
       change: "+24%",
       positive: true,
     },
@@ -98,8 +127,8 @@ function KPICards() {
       icon: <IconFuel />,
       iconBg: "bg-purple-50",
       iconColor: "text-purple-600",
-      label: "Fuel Efficiency",
-      value: "92.4%",
+      label: "Active Trips",
+      value: stats?.trips?.active || "92",
       change: "-3%",
       positive: false,
     },
@@ -130,7 +159,7 @@ function KPICards() {
   )
 }
 
-function FleetCoverageCard() {
+function FleetCoverageCard({ stats }: { stats: any }) {
   return (
     <div className={`${glassCard} overflow-hidden flex-1 flex flex-col`}>
       <div className="flex flex-col lg:flex-row flex-1">
@@ -153,7 +182,7 @@ function FleetCoverageCard() {
                   <IconTruck className="text-orange-600" />
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-gray-900">1,284</div>
+                  <div className="text-xl font-bold text-gray-900">{stats?.vehicles?.total || "1,284"}</div>
                   <div className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Total Vehicles</div>
                 </div>
               </div>
@@ -164,7 +193,7 @@ function FleetCoverageCard() {
                   <IconMap className="text-green-600" />
                 </div>
                 <div>
-                  <div className="text-xl font-bold text-gray-900">156</div>
+                  <div className="text-xl font-bold text-gray-900">{stats?.routes?.total || "156"}</div>
                   <div className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Active Routes</div>
                 </div>
               </div>
@@ -285,10 +314,10 @@ function InfluencerDriversTable() {
   )
 }
 
-function FleetStatusPie() {
+function FleetStatusPie({ stats }: { stats: any }) {
   const data = [
-    { label: "Active", value: 842, color: "#22c55e", pct: 66 },
-    { label: "Idle", value: 210, color: "#f59e0b", pct: 16 },
+    { label: "Active", value: stats?.vehicles?.active || 842, color: "#22c55e", pct: 66 },
+    { label: "Idle", value: (stats?.vehicles?.total || 1052) - (stats?.vehicles?.active || 842), color: "#f59e0b", pct: 16 },
     { label: "Maintenance", value: 132, color: "#ef4444", pct: 10 },
     { label: "Offline", value: 100, color: "#94a3b8", pct: 8 },
   ]
@@ -390,9 +419,9 @@ function FuelBreakdownPie() {
   )
 }
 
-function TripStatusPanel() {
+function TripStatusPanel({ stats }: { stats: any }) {
   const trips = [
-    { status: "Active", count: 47, color: "bg-blue-500", tone: "bg-blue-50 text-blue-700" },
+    { status: "Active", count: stats?.trips?.active || 47, color: "bg-blue-500", tone: "bg-blue-50 text-blue-700" },
     { status: "Completed", count: 182, color: "bg-green-500", tone: "bg-green-50 text-green-700" },
     { status: "Delayed", count: 12, color: "bg-orange-500", tone: "bg-orange-50 text-orange-700" },
     { status: "Cancelled", count: 5, color: "bg-red-500", tone: "bg-red-50 text-red-700" },

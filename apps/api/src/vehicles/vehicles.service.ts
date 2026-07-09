@@ -10,20 +10,20 @@ export class VehiclesService {
   async create(createVehicleDto: CreateVehicleDto) {
     return this.prisma.client.vehicle.create({
       data: createVehicleDto as any,
-      include: { drivers: true },
+      include: { drivers: true, trips: true, fuelRecords: true, maintenanceRecords: true },
     });
   }
 
   async findAll() {
     return this.prisma.client.vehicle.findMany({
-      include: { drivers: true },
+      include: { drivers: true, trips: true, fuelRecords: true, maintenanceRecords: true },
     });
   }
 
   async findOne(id: string) {
     const vehicle = await this.prisma.client.vehicle.findUnique({
       where: { id },
-      include: { drivers: true },
+      include: { drivers: true, trips: true, fuelRecords: true, maintenanceRecords: true },
     });
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with ID ${id} not found`);
@@ -36,7 +36,7 @@ export class VehiclesService {
     return this.prisma.client.vehicle.update({
       where: { id },
       data: updateVehicleDto,
-      include: { drivers: true },
+      include: { drivers: true, trips: true, fuelRecords: true, maintenanceRecords: true },
     });
   }
 
