@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 const glassCard = "glass-card rounded-2xl"
 const softCard = "soft-card rounded-xl"
@@ -35,8 +35,12 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 // Active Trips Summary
-function ActiveTripsPanel({ trips }: { trips: any[] }) {
-  const activeTrips = trips.filter(t => t.status === "In Progress").slice(0, 3);
+function ActiveTripsPanel() {
+  const activeTrips = [
+    { id: "TRP-201", route: "Colombo → Kandy", progress: 65 },
+    { id: "TRP-202", route: "Galle → Matara", progress: 45 },
+    { id: "TRP-203", route: "Kurunegala → Negombo", progress: 80 },
+  ]
 
   return (
     <div className={`${glassCard} p-5`}>
@@ -53,7 +57,7 @@ function ActiveTripsPanel({ trips }: { trips: any[] }) {
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
               <div className="h-full bg-blue-500 rounded-full" style={{ width: `${trip.progress}%` }}></div>
             </div>
-            <p className="text-xs text-gray-500 mt-1.5">{trip.progressPercent}% completed</p>
+            <p className="text-xs text-gray-500 mt-1.5">{trip.progress}% completed</p>
           </div>
         ))}
       </div>
@@ -62,12 +66,13 @@ function ActiveTripsPanel({ trips }: { trips: any[] }) {
 }
 
 // Recent Activities
-function RecentActivities({ trips }: { trips: any[] }) {
-  const activities = trips.slice(0, 4).map(t => ({
-    icon: t.status === "COMPLETED" ? "✅" : t.status === "IN_PROGRESS" ? "🚀" : t.status === "DELAYED" ? "⏳" : "📝",
-    message: `Trip ${t.id} is now ${t.status}`,
-    time: t.departure
-  }))
+function RecentActivities() {
+  const activities = [
+    { icon: "✅", message: "Trip TRP-201 completed successfully", time: "10 min ago" },
+    { icon: "🚀", message: "Vehicle V102 started trip TRP-202", time: "25 min ago" },
+    { icon: "👤", message: "Driver assigned to trip TRP-203", time: "1 hour ago" },
+    { icon: "⏳", message: "Trip TRP-205 delayed by 15 minutes", time: "2 hours ago" },
+  ]
 
   return (
     <div className={`${glassCard} p-5`}>
@@ -88,12 +93,12 @@ function RecentActivities({ trips }: { trips: any[] }) {
 }
 
 // Alerts Section
-function AlertsSection({ alerts }: { alerts: any[] }) {
-  const mappedAlerts = alerts.slice(0, 4).map(a => ({
-    icon: a.severity === "CRITICAL" ? "⚠️" : a.severity === "WARNING" ? "⏳" : "ℹ️",
-    message: a.message,
-    severity: a.severity.toLowerCase()
-  }))
+function AlertsSection() {
+  const alerts = [
+    { icon: "⏳", message: "Trip TRP-205 delayed by 15 minutes", severity: "warning" },
+    { icon: "⚠️", message: "Vehicle V110 mechanical breakdown", severity: "critical" },
+    { icon: "⚠️", message: "Driver Mike Johnson unavailable", severity: "warning" },
+  ]
 
   const severityColors = {
     warning: "border-orange-200 bg-orange-50",
@@ -105,7 +110,7 @@ function AlertsSection({ alerts }: { alerts: any[] }) {
     <div className={`${glassCard} p-5`}>
       <h2 className="text-base font-bold text-gray-900 mb-4">Alerts</h2>
       <div className="space-y-2">
-        {mappedAlerts.map((alert, idx) => (
+        {alerts.map((alert, idx) => (
           <div key={idx} className={`${softCard} p-3 border-l-4 ${severityColors[alert.severity]}`}>
             <p className="text-sm font-medium text-gray-800">
               <span className="mr-2">{alert.icon}</span>
@@ -120,48 +125,54 @@ function AlertsSection({ alerts }: { alerts: any[] }) {
 
 export function Trips() {
   const [activeFilter, setActiveFilter] = useState("All")
-  const [trips, setTrips] = useState<any[]>([])
-  const [alerts, setAlerts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchTrips() {
-      try {
-        const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
-        const [resTrips, resAlerts] = await Promise.all([
-          fetch("/api/trips", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/alerts", { headers: { Authorization: `Bearer ${token}` } })
-        ])
-
-        if (resTrips.ok) {
-          const data = await resTrips.json()
-          const mappedTrips = data.map((t: any) => ({
-            id: t.id.slice(0, 8).toUpperCase(),
-            route: t.route ? `${t.route.startPoint} → ${t.route.endPoint}` : "Unknown Route",
-            vehicle: t.vehicle ? t.vehicle.registrationNumber : "Unassigned",
-            driver: t.driver ? t.driver.fullName : "Unassigned",
-            departure: new Date(t.scheduledDeparture).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            arrival: new Date(t.scheduledArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            status: t.status === "IN_PROGRESS" ? "In Progress" : 
-                    t.status === "COMPLETED" ? "Completed" : 
-                    t.status === "SCHEDULED" ? "Scheduled" : 
-                    t.status === "DELAYED" ? "Delayed" : "Cancelled",
-            progressPercent: t.progressPercent || 0,
-            rawStatus: t.status
-          }))
-          setTrips(mappedTrips)
-        }
-        if (resAlerts.ok) {
-          setAlerts(await resAlerts.json())
-        }
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchTrips()
-  }, [])
+  const trips = [
+    {
+      id: "TRP-201",
+      route: "Colombo → Kandy",
+      vehicle: "V102",
+      driver: "John Doe",
+      departure: "08:30 AM",
+      arrival: "10:45 AM",
+      status: "Completed",
+    },
+    {
+      id: "TRP-202",
+      route: "Galle → Matara",
+      vehicle: "V105",
+      driver: "Jane Smith",
+      departure: "09:15 AM",
+      arrival: "11:20 AM",
+      status: "In Progress",
+    },
+    {
+      id: "TRP-203",
+      route: "Kurunegala → Negombo",
+      vehicle: "V108",
+      driver: "Mike Johnson",
+      departure: "07:00 AM",
+      arrival: "09:30 AM",
+      status: "Completed",
+    },
+    {
+      id: "TRP-204",
+      route: "Matara → Galle",
+      vehicle: "V110",
+      driver: "Sarah Williams",
+      departure: "02:00 PM",
+      arrival: "03:15 PM",
+      status: "Scheduled",
+    },
+    {
+      id: "TRP-205",
+      route: "Negombo → Colombo",
+      vehicle: "V112",
+      driver: "Tom Brown",
+      departure: "04:30 PM",
+      arrival: "—",
+      status: "Delayed",
+    },
+  ]
 
   const filteredTrips = activeFilter === "All" ? trips : trips.filter((t) => t.status === activeFilter)
 
@@ -191,12 +202,12 @@ export function Trips() {
 
         {/* Active Trips and Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ActiveTripsPanel trips={trips} />
-          <AlertsSection alerts={alerts} />
+          <ActiveTripsPanel />
+          <AlertsSection />
         </div>
 
         {/* Recent Activities */}
-        <RecentActivities trips={trips} />
+        <RecentActivities />
 
         {/* Trips Table */}
         <div className={`${glassCard} p-5`}>

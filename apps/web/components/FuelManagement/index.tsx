@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 const glassCard = "bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg"
 const softCard = "bg-white/50 backdrop-blur-sm rounded-xl border border-white/40"
@@ -192,10 +192,12 @@ function VehicleFuelUsageChart() {
 }
 
 // Recent Transactions Panel
-function RecentTransactionsPanel({ records }: { records: any[] }) {
-  const transactions = records.slice(0, 3).map(r => ({
-    id: r.id, vehicle: r.vehicle, liters: r.quantity, cost: r.cost, time: r.date, icon: "⛽"
-  }))
+function RecentTransactionsPanel() {
+  const transactions = [
+    { id: "T-001", vehicle: "V-102", liters: 40, cost: 14000, time: "2 hours ago", icon: "⛽" },
+    { id: "T-002", vehicle: "V-108", liters: 35, cost: 12200, time: "4 hours ago", icon: "🚗" },
+    { id: "T-003", vehicle: "V-115", liters: 50, cost: 17500, time: "6 hours ago", icon: "⛽" },
+  ]
 
   return (
     <div className={`${glassCard} p-5`}>
@@ -222,13 +224,12 @@ function RecentTransactionsPanel({ records }: { records: any[] }) {
 }
 
 // Alerts Section
-function AlertsSection({ alerts }: { alerts: any[] }) {
-  const mappedAlerts = alerts.slice(0, 3).map(a => ({
-    id: a.id,
-    message: a.message,
-    severity: a.severity.toLowerCase(),
-    icon: a.severity === "CRITICAL" ? "🚨" : "⚠️"
-  }))
+function AlertsSection() {
+  const alerts = [
+    { id: 1, message: "Vehicle V-103 exceeding fuel efficiency threshold", severity: "warning", icon: "⚠️" },
+    { id: 2, message: "Fuel expenses exceeded monthly budget by 12%", severity: "critical", icon: "🚨" },
+    { id: 3, message: "Missing fuel records for vehicle V-110", severity: "warning", icon: "⚠️" },
+  ]
 
   const alertColors = {
     critical: "border-red-300 bg-red-50",
@@ -240,7 +241,7 @@ function AlertsSection({ alerts }: { alerts: any[] }) {
     <div className={`${glassCard} p-5`}>
       <h2 className="text-base font-bold text-gray-900 mb-4">Alerts</h2>
       <div className="space-y-2">
-        {mappedAlerts.map((alert) => (
+        {alerts.map((alert) => (
           <div key={alert.id} className={`${softCard} p-3 border-l-4 ${alertColors[alert.severity]}`}>
             <div className="flex items-start gap-2">
               <span className="text-lg flex-shrink-0">{alert.icon}</span>
@@ -283,7 +284,14 @@ function EfficiencyRankingPanel() {
 }
 
 // Fuel Records Table
-function FuelRecordsTable({ records }: { records: any[] }) {
+function FuelRecordsTable() {
+  const records = [
+    { id: "FR-001", vehicle: "V-101", driver: "John Doe", fuelType: "Diesel", quantity: 40, cost: 14000, date: "2026-06-28" },
+    { id: "FR-002", vehicle: "V-102", driver: "Sarah Khan", fuelType: "Petrol", quantity: 35, cost: 12200, date: "2026-06-28" },
+    { id: "FR-003", vehicle: "V-103", driver: "Ahmad Ali", fuelType: "Diesel", quantity: 50, cost: 17500, date: "2026-06-27" },
+    { id: "FR-004", vehicle: "V-104", driver: "Emma Smith", fuelType: "CNG", quantity: 25, cost: 6500, date: "2026-06-27" },
+    { id: "FR-005", vehicle: "V-105", driver: "Hassan Lee", fuelType: "Petrol", quantity: 30, cost: 10500, date: "2026-06-26" },
+  ]
 
   const [activeFilter, setActiveFilter] = useState<string>("all")
 
@@ -355,43 +363,6 @@ function FuelRecordsTable({ records }: { records: any[] }) {
 
 // Main Fuel Management Component
 export default function FuelManagement() {
-  const [records, setRecords] = useState<any[]>([])
-  const [alerts, setAlerts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
-        const [resFuel, resAlerts] = await Promise.all([
-          fetch("/api/fuel", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/alerts", { headers: { Authorization: `Bearer ${token}` } })
-        ])
-
-        if (resFuel.ok) {
-          const data = await resFuel.json()
-          const mappedRecords = data.map((r: any) => ({
-            id: r.id.slice(0, 8).toUpperCase(),
-            vehicle: r.vehicle?.registrationNumber || "Unknown",
-            driver: r.vehicle?.drivers?.[0]?.fullName || "Unknown",
-            fuelType: "Diesel", // hardcoded default
-            quantity: r.liters,
-            cost: r.cost,
-            date: new Date(r.date).toLocaleDateString(),
-          }))
-          setRecords(mappedRecords)
-        }
-        if (resAlerts.ok) {
-          setAlerts(await resAlerts.json())
-        }
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
   return (
     <div className="flex-1 min-w-0">
       {/* Header */}
@@ -439,18 +410,18 @@ export default function FuelManagement() {
       {/* Transactions and Alerts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-1">
-          <RecentTransactionsPanel records={records} />
+          <RecentTransactionsPanel />
         </div>
         <div className="lg:col-span-1">
           <EfficiencyRankingPanel />
         </div>
         <div className="lg:col-span-1">
-          <AlertsSection alerts={alerts} />
+          <AlertsSection />
         </div>
       </div>
 
       {/* Fuel Records Table */}
-      <FuelRecordsTable records={records} />
+      <FuelRecordsTable />
     </div>
   )
 }

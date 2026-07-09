@@ -116,11 +116,11 @@ export function DashboardSidebar() {
     { icon: <IconTruck />, label: "Fleet Management", href: "/dashboard/vehicles", activeMatch: "^/dashboard/vehicles(?!/register)" },
     { icon: <IconUsers />, label: "Drivers", href: "/dashboard/drivers", activeMatch: "^/dashboard/drivers" },
     { icon: <IconMap />, label: "Routes", href: "/dashboard/routes", activeMatch: "^/dashboard/routes" },
-    { icon: <IconDocument />, label: "Trips", href: "#", activeMatch: "^/dashboard/trips" },
-    { icon: <IconTools />, label: "Maintenance", href: "#", activeMatch: "^/dashboard/maintenance" },
-    { icon: <IconFuel />, label: "Fuel Management", href: "#", activeMatch: "^/dashboard/fuel" },
-    { icon: <IconBell />, label: "Alerts", href: "#", activeMatch: "^/dashboard/alerts" },
-    { icon: <IconChart />, label: "Reports", href: "#", activeMatch: "^/dashboard/reports" },
+    { icon: <IconDocument />, label: "Trips", href: "/dashboard/trips", activeMatch: "^/dashboard/trips" },
+    { icon: <IconTools />, label: "Maintenance", href: "/dashboard/maintenance", activeMatch: "^/dashboard/maintenance" },
+    { icon: <IconFuel />, label: "Fuel Management", href: "/dashboard/fuel", activeMatch: "^/dashboard/fuel" },
+    { icon: <IconBell />, label: "Alerts", href: "#", activeMatch: "^/dashboard/alerts", comingSoon: true },
+    { icon: <IconChart />, label: "Reports", href: "#", activeMatch: "^/dashboard/reports", comingSoon: true },
   ]
 
   return (
@@ -128,13 +128,29 @@ export function DashboardSidebar() {
       <nav className="flex flex-col items-center gap-1.5 flex-1">
         {menuItems.map((item, idx) => {
           const isActive = new RegExp(item.activeMatch).test(pathname)
+          const label = item.comingSoon ? `${item.label} - Coming soon` : item.label
+
+          if (item.comingSoon) {
+            return (
+              <button
+                key={idx}
+                type="button"
+                title={label}
+                aria-label={label}
+                disabled
+                className="w-9 h-9 flex items-center justify-center rounded-full text-gray-300 cursor-not-allowed opacity-70"
+              >
+                {item.icon}
+              </button>
+            )
+          }
           
           return (
             <Link
               key={idx}
               href={item.href}
-              title={item.label}
-              aria-label={item.label}
+              title={label}
+              aria-label={label}
               className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 ${
                 isActive
                   ? "bg-[#1a1a1a] text-white shadow-md scale-105"

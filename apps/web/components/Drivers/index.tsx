@@ -79,15 +79,26 @@ export function DriversPage() {
   const activeDrivers = drivers.filter(d => d.status === "ACTIVE").length
   const onLeaveDrivers = drivers.filter(d => d.status === "ON_LEAVE").length
 
+  const onDutyDrivers = drivers.filter(d => d.assignedVehicleId).length
+  const availableDrivers = drivers.filter(d => d.status === "ACTIVE" && !d.assignedVehicleId).length
+  const licenseExpiring = drivers.filter(d => {
+    const expiry = new Date(d.licenseExpiry)
+    return !Number.isNaN(expiry.getTime()) && expiry < new Date(new Date().setMonth(new Date().getMonth() + 1))
+  }).length
+
+  const attendanceSeries = [72, 78, 76, 81, 84, 88, 91]
+  const performanceMetrics = [
+    { label: "Trips", value: "248", accent: "bg-blue-500" },
+    { label: "Distance", value: "18.2k km", accent: "bg-emerald-500" },
+    { label: "Safety", value: "96%", accent: "bg-orange-500" },
+    { label: "Fuel", value: "8.4 L/100km", accent: "bg-violet-500" },
+  ]
+
   return (
     <div className="relative">
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between mb-6">
           <div>
-<<<<<<< Updated upstream
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Drivers</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage driver credentials and assignments</p>
-=======
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Drivers Dashboard</h1>
             <p className="text-gray-500 text-sm mt-1">Monitor availability, performance, and compliance across your driver pool.</p>
           </div>
@@ -95,91 +106,120 @@ export function DriversPage() {
             <button onClick={() => setIsAddModalOpen(true)} className="bg-[#1a1a1a] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-colors">
               Add Driver
             </button>
-            <button onClick={() => { setActiveDriver(null); setIsAssignModalOpen(true); }} className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+            <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
               Assign Vehicle
             </button>
             <button className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
               Export Report
             </button>
->>>>>>> Stashed changes
+
+
           </div>
-          <button onClick={() => setIsAddModalOpen(true)} className="bg-[#1a1a1a] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-            + Register Driver
-          </button>
         </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
           <StatCard label="Total Drivers" value={totalDrivers.toString()} color="text-gray-900" />
           <StatCard label="Active" value={activeDrivers.toString()} color="text-green-600" />
+          <StatCard label="On Duty" value={onDutyDrivers.toString()} color="text-blue-600" />
+          <StatCard label="Available" value={availableDrivers.toString()} color="text-purple-600" />
           <StatCard label="On Leave" value={onLeaveDrivers.toString()} color="text-orange-600" />
-          <StatCard label="Unassigned" value={drivers.filter(d => !d.assignedVehicleId).length.toString()} color="text-purple-600" />
+          <StatCard label="License Expiry" value={licenseExpiring.toString()} color="text-red-600" />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 mb-4">
-          {filters.map(f => (
-            <button
-              key={f}
-              onClick={() => { setActiveFilter(f); setSelectedDriver(null) }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeFilter === f ? "bg-[#1a1a1a] text-white shadow-sm" : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* Driver Grid */}
-          <div className="lg:col-span-5 space-y-3">
-            {filtered.map(driver => (
-              <div
-                key={driver.id}
-                onClick={() => setSelectedDriver(driver.id === selectedDriver ? null : driver.id)}
-                className={`${glassCard} p-4 cursor-pointer transition-all hover:shadow-lg ${selectedDriver === driver.id ? "ring-2 ring-blue-500" : ""}`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold overflow-hidden shrink-0">
-                      {driver.photoUrl ? <img src={driver.photoUrl} alt="profile" className="w-full h-full object-cover" /> : driver.fullName.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-base font-bold text-gray-900">{driver.fullName}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{driver.nationalId}</div>
-                    </div>
+        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr] mb-5">
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-orange-600 font-semibold">Driver Status Chart</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Current availability</h2>
+              </div>
+              <span className="text-xs text-gray-500">Live status</span>
+            </div>
+            <div className="flex flex-col md:flex-row md:items-center gap-5">
+              <div className="relative h-36 w-36 rounded-full mx-auto" style={{ background: "conic-gradient(#f59e0b 0 45%, #3b82f6 45% 70%, #8b5cf6 70% 90%, #10b981 90% 100%)" }}>
+                <div className="absolute inset-5 rounded-full bg-white flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">85%</div>
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-gray-500">Ready</div>
                   </div>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusTones[driver.status]} shrink-0`}>
-                    {statusLabels[driver.status]}
-                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2 mt-4 flex-wrap">
-                  <span className="font-medium text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">Exp: {driver.experienceYears} Years</span>
-                  <span className="font-medium text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-md ml-auto">
-                    {driver.assignedVehicle?.registrationNumber || "No Vehicle"}
-                  </span>
-                  <span className="font-medium text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
-                    {driver.assignedRoute?.routeCode || "No Route"}
-                  </span>
+              </div>
+              <div className="flex-1 space-y-2.5">
+                <DriverStatusLegend label="Active" value="45%" color="bg-emerald-500" />
+                <DriverStatusLegend label="On Duty" value="25%" color="bg-blue-500" />
+                <DriverStatusLegend label="Available" value="20%" color="bg-violet-500" />
+                <DriverStatusLegend label="On Leave" value="10%" color="bg-orange-500" />
+              </div>
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-blue-600 font-semibold">Attendance Chart</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Weekly attendance trend</h2>
+              </div>
+              <span className="text-xs text-gray-500">This week</span>
+            </div>
+            <div className="h-44">
+              <svg viewBox="0 0 320 160" className="w-full h-full">
+                <line x1="20" y1="132" x2="300" y2="132" stroke="#e5e7eb" strokeWidth="1" />
+                <line x1="20" y1="96" x2="300" y2="96" stroke="#f3f4f6" strokeWidth="1" />
+                <line x1="20" y1="60" x2="300" y2="60" stroke="#f3f4f6" strokeWidth="1" />
+                {attendanceSeries.map((value, index) => {
+                  const x = 40 + index * 44
+                  const y = 132 - (value - 60) * 1.1
+                  return <circle key={index} cx={x} cy={y} r="4" fill="#f59e0b" />
+                })}
+                <path d={attendanceSeries.map((value, index) => `${index === 0 ? "M" : "L"} ${40 + index * 44} ${132 - (value - 60) * 1.1}`).join(" ")} fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${glassCard} p-5 mb-5`}>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-600 font-semibold">Driver Performance Chart</div>
+              <h2 className="text-xl font-semibold text-gray-900 mt-2">Operations performance</h2>
+            </div>
+            <span className="text-xs text-gray-500">Last 30 days</span>
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            {performanceMetrics.map((metric) => (
+              <div key={metric.label} className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4">
+                <div className="text-sm font-semibold text-gray-900">{metric.label}</div>
+                <div className="mt-3 h-2.5 rounded-full bg-gray-200 overflow-hidden">
+                  <div className={`h-2.5 rounded-full ${metric.accent}`} style={{ width: metric.label === "Trips" ? "78%" : metric.label === "Distance" ? "82%" : metric.label === "Safety" ? "90%" : "74%" }} />
                 </div>
+                <div className="mt-3 text-xl font-bold text-gray-900">{metric.value}</div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Detail Panel */}
-          <div className="lg:col-span-7">
-            {selected ? (
-              <DriverDetailPanel driver={selected} />
-            ) : (
-              <div className={`${glassCard} p-8 flex items-center justify-center min-h-[500px]`}>
-                <div className="text-center">
-                  <p className="text-gray-500 text-sm">Select a driver to view details</p>
-                </div>
+        <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr] mb-5">
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-gray-500 font-semibold">Recent Activities</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Latest updates</h2>
               </div>
-<<<<<<< Updated upstream
-            )}
-=======
+            </div>
+            <div className="space-y-3">
+              <ActivityItem title="John Silva completed Route 25" detail="12 mins ago" />
+              <ActivityItem title="Kasun assigned to Vehicle V102" detail="35 mins ago" />
+              <ActivityItem title="Nimal requested leave" detail="1 hour ago" />
+              <ActivityItem title="Driver license renewed" detail="2 hours ago" />
+            </div>
+          </div>
+
+          <div className={`${glassCard} p-5`}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-red-600 font-semibold">Alerts</div>
+                <h2 className="text-xl font-semibold text-gray-900 mt-2">Critical information</h2>
+              </div>
             </div>
             <div className="space-y-3">
               <ActivityItem title="John Silva completed Route 25" detail="12 mins ago" />
@@ -264,12 +304,7 @@ export function DriversPage() {
                         <div className="flex flex-wrap gap-2">
                           <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">View</button>
                           <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">Edit</button>
-                          <button 
-                            onClick={() => { setActiveDriver(driver); setIsAssignModalOpen(true); }}
-                            className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300"
-                          >
-                            Assign
-                          </button>
+                          <button className="rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:border-orange-300">Assign</button>
                           <button className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700">Suspend</button>
                         </div>
                       </td>
@@ -278,11 +313,12 @@ export function DriversPage() {
                 )}
               </tbody>
             </table>
->>>>>>> Stashed changes
+
+
           </div>
         </div>
       </div>
-      
+
       <AddDriverModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} vehicles={vehicles} routes={routes} />
       <AssignDriverModal 
         isOpen={isAssignModalOpen} 
@@ -296,6 +332,39 @@ export function DriversPage() {
           setIsAssignModalOpen(false)
         }} 
       />
+    </div>
+  )
+}
+
+function DriverStatusLegend({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50/70 px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
+        <span className="text-sm font-semibold text-gray-900">{label}</span>
+      </div>
+      <span className="text-sm font-semibold text-gray-700">{value}</span>
+    </div>
+  )
+}
+
+function ActivityItem({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50/70 px-3 py-3">
+      <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500" />
+      <div>
+        <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div className="text-xs text-gray-500 mt-1">{detail}</div>
+      </div>
+    </div>
+  )
+}
+
+function AlertItem({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-red-100 bg-red-50/70 px-3 py-3">
+      <div className="text-sm font-semibold text-gray-900">{title}</div>
+      <div className="text-xs text-gray-600 mt-1">{detail}</div>
     </div>
   )
 }

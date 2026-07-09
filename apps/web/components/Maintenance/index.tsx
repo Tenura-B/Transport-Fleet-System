@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 const glassCard = "glass-card rounded-2xl"
 const softCard = "soft-card rounded-xl"
@@ -285,13 +285,12 @@ function MaintenanceCostChart() {
 }
 
 // Upcoming Services Panel
-function UpcomingServicesPanel({ records }: { records: any[] }) {
-  const upcoming = records.filter(r => r.status === "Scheduled").slice(0, 3).map(r => ({
-    vehicle: r.vehicle,
-    service: r.serviceType,
-    dueIn: r.lastService,
-    urgency: "normal"
-  }))
+function UpcomingServicesPanel() {
+  const upcoming = [
+    { vehicle: "V-102", service: "Oil Change", dueIn: "Due in 3 days", urgency: "normal" },
+    { vehicle: "V-115", service: "Brake Service", dueIn: "Due Tomorrow", urgency: "high" },
+    { vehicle: "V-108", service: "Engine Check", dueIn: "Due in 5 days", urgency: "normal" },
+  ]
 
   const urgencyColors = {
     high: "border-red-300 bg-red-50",
@@ -320,12 +319,13 @@ function UpcomingServicesPanel({ records }: { records: any[] }) {
 }
 
 // Recent Activities
-function RecentActivities({ records }: { records: any[] }) {
-  const activities = records.slice(0, 4).map(r => ({
-    icon: r.status === "Operational" ? "✅" : r.status === "Scheduled" ? "📋" : "🔧",
-    message: `${r.vehicle} ${r.serviceType} ${r.status}`,
-    time: r.lastService
-  }))
+function RecentActivities() {
+  const activities = [
+    { icon: "✅", message: "Vehicle V102 completed service", time: "2 hours ago" },
+    { icon: "🔧", message: "Brake replacement completed", time: "4 hours ago" },
+    { icon: "📋", message: "Oil change scheduled for V-115", time: "6 hours ago" },
+    { icon: "✔️", message: "Maintenance request approved", time: "1 day ago" },
+  ]
 
   return (
     <div className={`${glassCard} p-5`}>
@@ -346,12 +346,13 @@ function RecentActivities({ records }: { records: any[] }) {
 }
 
 // Alerts Section
-function AlertsSection({ alerts }: { alerts: any[] }) {
-  const mappedAlerts = alerts.slice(0, 4).map(a => ({
-    icon: a.severity === "CRITICAL" ? "⚠️" : a.severity === "WARNING" ? "🔍" : "ℹ️",
-    message: a.message,
-    severity: a.severity.toLowerCase()
-  }))
+function AlertsSection() {
+  const alerts = [
+    { icon: "⚠️", message: "Vehicle V108 service overdue", severity: "critical" },
+    { icon: "🔍", message: "Brake inspection required", severity: "warning" },
+    { icon: "💰", message: "Maintenance cost exceeds budget", severity: "warning" },
+    { icon: "🚫", message: "Vehicle V110 unavailable for repairs", severity: "critical" },
+  ]
 
   const severityColors = {
     warning: "border-orange-200 bg-orange-50",
@@ -363,7 +364,7 @@ function AlertsSection({ alerts }: { alerts: any[] }) {
     <div className={`${glassCard} p-5`}>
       <h2 className="text-base font-bold text-gray-900 mb-4">Alerts</h2>
       <div className="space-y-2">
-        {mappedAlerts.map((alert, idx) => (
+        {alerts.map((alert, idx) => (
           <div key={idx} className={`${softCard} p-3 border-l-4 ${severityColors[alert.severity]}`}>
             <p className="text-sm font-medium text-gray-800">
               <span className="mr-2">{alert.icon}</span>
@@ -381,43 +382,53 @@ function AlertsSection({ alerts }: { alerts: any[] }) {
 export function Maintenance() {
   const [activeFilter, setActiveFilter] = useState("All")
 
-  const [maintenanceRecords, setMaintenanceRecords] = useState<any[]>([])
-  const [alerts, setAlerts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchMaintenanceRecords() {
-      try {
-        const token = localStorage.getItem("access_token") || document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
-        const [resMaintenance, resAlerts] = await Promise.all([
-          fetch("/api/maintenance", { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/alerts", { headers: { Authorization: `Bearer ${token}` } })
-        ])
-
-        if (resMaintenance.ok) {
-          const data = await resMaintenance.json()
-          const mappedRecords = data.map((r: any) => ({
-            id: r.id.slice(0, 8).toUpperCase(),
-            vehicle: r.vehicle?.registrationNumber || "Unknown",
-            serviceType: r.type || "Service",
-            lastService: new Date(r.dateScheduled).toLocaleDateString(),
-            nextService: r.dateCompleted ? new Date(r.dateCompleted).toLocaleDateString() : "Pending",
-            status: r.status === "COMPLETED" ? "Operational" : r.status === "IN_PROGRESS" ? "Under Maintenance" : "Scheduled",
-            cost: `Rs ${r.cost.toLocaleString()}`,
-          }))
-          setMaintenanceRecords(mappedRecords)
-        }
-        if (resAlerts.ok) {
-          setAlerts(await resAlerts.json())
-        }
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchMaintenanceRecords()
-  }, [])
+  const maintenanceRecords = [
+    {
+      id: "MR-001",
+      vehicle: "V-102",
+      serviceType: "Oil Change",
+      lastService: "2026-06-15",
+      nextService: "2026-09-15",
+      status: "Completed",
+      cost: "Rs 1,500",
+    },
+    {
+      id: "MR-002",
+      vehicle: "V-115",
+      serviceType: "Brake Service",
+      lastService: "2026-06-20",
+      nextService: "2026-06-30",
+      status: "Scheduled",
+      cost: "Rs 2,500",
+    },
+    {
+      id: "MR-003",
+      vehicle: "V-108",
+      serviceType: "Engine Check",
+      lastService: "2026-05-10",
+      nextService: "2026-06-25",
+      status: "Overdue",
+      cost: "Rs 3,200",
+    },
+    {
+      id: "MR-004",
+      vehicle: "V-110",
+      serviceType: "Tire Replacement",
+      lastService: "2026-06-01",
+      nextService: "2026-07-10",
+      status: "Under Maintenance",
+      cost: "Rs 2,800",
+    },
+    {
+      id: "MR-005",
+      vehicle: "V-120",
+      serviceType: "Suspension Service",
+      lastService: "2026-06-22",
+      nextService: "2026-08-22",
+      status: "Operational",
+      cost: "Rs 1,200",
+    },
+  ]
 
   const filteredRecords = activeFilter === "All" ? maintenanceRecords : maintenanceRecords.filter((r) => r.status === activeFilter)
 
@@ -466,15 +477,18 @@ export function Maintenance() {
           <MaintenanceStatusChart />
           <MonthlyTrendChart />
         </div>
+
         {/* Maintenance Cost Chart */}
         <MaintenanceCostChart />
 
         {/* Upcoming Services and Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <UpcomingServicesPanel records={maintenanceRecords} />
-          <RecentActivities records={maintenanceRecords} />
-          <AlertsSection alerts={alerts} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <UpcomingServicesPanel />
+          <AlertsSection />
         </div>
+
+        {/* Recent Activities */}
+        <RecentActivities />
 
         {/* Maintenance Records Table */}
         <div className={`${glassCard} p-5`}>
