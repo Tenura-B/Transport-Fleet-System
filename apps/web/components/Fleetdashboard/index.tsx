@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect, useState } from "react"
 
 import { SriLankaMap } from "./SriLankaMap"
@@ -41,19 +43,14 @@ export function FleetDashboard() {
       <div className="grid grid-cols-1">
         <div className="flex">
           <div className="w-full flex flex-col">
-            <FleetCoverageCard />
+            <FleetCoverageCard stats={stats} />
           </div>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <FleetStatusPie />
-        <FuelBreakdownPie />
-        <TripStatusPanel />
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <FleetStatusPie stats={stats} />
         <FuelBreakdownPie />
         <TripStatusPanel stats={stats} />
-
       </div>
       <FuelTrendChart />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
